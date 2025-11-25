@@ -1,0 +1,15 @@
+package com.imprenta.ordenes_service.client;
+
+import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+
+import com.imprenta.ordenes_service.dto.UsuarioDTO;
+
+@FeignClient(name = "personas-service", url = "http://localhost:8081")
+public interface PersonasClient {
+
+    @GetMapping("/api/usuarios/{id}")
+    UsuarioDTO obtenerUsuarioPorId(@PathVariable("id") Integer idUsuario);
+
+}
