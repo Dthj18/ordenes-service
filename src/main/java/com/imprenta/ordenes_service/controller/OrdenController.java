@@ -21,6 +21,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import com.imprenta.ordenes_service.dto.CambiarEstatusDTO;
 import com.imprenta.ordenes_service.dto.CrearOrdenDTO;
+import com.imprenta.ordenes_service.dto.reportes.HistorialOrdenDTO;
 import com.imprenta.ordenes_service.dto.reportes.OrdenCardDTO;
 import com.imprenta.ordenes_service.exception.BadRequestException;
 import com.imprenta.ordenes_service.model.Movimientos;
@@ -155,5 +156,10 @@ public class OrdenController {
     @GetMapping("/movil/tarjetas")
     public ResponseEntity<List<OrdenCardDTO>> obtenerTarjetasParaMovil() {
         return ResponseEntity.ok(ordenService.obtenerTarjetasMovil());
+    }
+
+    @GetMapping("/{idOrden}/historial")
+    public ResponseEntity<List<HistorialOrdenDTO>> obtenerHistorial(@PathVariable Integer idOrden) {
+        return ResponseEntity.ok(ordenService.obtenerHistorialOrden(idOrden));
     }
 }

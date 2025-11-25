@@ -19,7 +19,6 @@ public interface OrdenRepository extends JpaRepository<Orden, Integer> {
                 TO_CHAR(o.fecha_creacion, 'Month DD') as fecha,
                 COALESCE(p.descripcion, 'Varios Productos') as productoPrincipal,
 
-                -- Estatus simplificado
                 CASE
                     WHEN ce.id_estatus = 12 THEN 'Completado'
                     WHEN ce.id_estatus = 11 THEN 'Cancelada'
@@ -29,7 +28,6 @@ public interface OrdenRepository extends JpaRepository<Orden, Integer> {
                 ce.clave as claveEstatus,
                 TO_CHAR(o.fecha_creacion, 'YYYY-MM-DD') as fechaIso,
 
-                -- --- NUEVOS CAMPOS ---
                 u.nombre as nombreEncargado,
                 o.monto_total as montoTotal,
                 -- Formateamos la fecha de entrega (si es nula, ponemos 'Pendiente')

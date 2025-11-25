@@ -1,10 +1,12 @@
 package com.imprenta.ordenes_service.helpers;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.imprenta.ordenes_service.dto.reportes.HistorialOrdenDTO;
 import com.imprenta.ordenes_service.exception.ResourceNotFoundException;
 import com.imprenta.ordenes_service.model.CatEstatus;
 import com.imprenta.ordenes_service.model.Orden;
@@ -69,5 +71,9 @@ public class TrazabilidadHelper {
         nuevaTraza.setFechaActualizacion(LocalDateTime.now());
 
         return trazabilidadRepository.save(nuevaTraza);
+    }
+
+    public List<HistorialOrdenDTO> obtenerHistorial(Integer idOrden) {
+        return trazabilidadRepository.obtenerHistorialPorOrden(idOrden);
     }
 }

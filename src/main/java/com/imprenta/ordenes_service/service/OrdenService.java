@@ -24,7 +24,7 @@ import com.imprenta.ordenes_service.model.Trazabilidad;
 import com.imprenta.ordenes_service.repository.OrdenRepository;
 import com.imprenta.ordenes_service.service.states.OrdenState;
 import com.imprenta.ordenes_service.service.states.OrdenStateFactory;
-
+import com.imprenta.ordenes_service.dto.reportes.HistorialOrdenDTO;
 import jakarta.transaction.Transactional;
 
 @Service
@@ -149,6 +149,13 @@ public class OrdenService {
 
     public List<OrdenCardDTO> obtenerTarjetasMovil() {
         return ordenRepository.obtenerTarjetasMovil();
+    }
+
+    public List<HistorialOrdenDTO> obtenerHistorialOrden(Integer idOrden) {
+        if (!ordenRepository.existsById(idOrden)) {
+            throw new ResourceNotFoundException("Orden no encontrada: " + idOrden);
+        }
+        return trazabilidadHelper.obtenerHistorial(idOrden);
     }
 
 }

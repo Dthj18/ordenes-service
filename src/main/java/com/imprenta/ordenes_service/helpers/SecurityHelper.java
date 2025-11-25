@@ -15,7 +15,6 @@ public class SecurityHelper {
 
     private final PersonasClient personasClient;
 
-    // CONSTANTES DE ROLES (Según tu SQL)
     public static final Integer ROL_DUENO = 1;
     public static final Integer ROL_ADMIN = 2;
     public static final Integer ROL_CONTADORA = 3;
@@ -28,13 +27,7 @@ public class SecurityHelper {
         this.personasClient = personasClient;
     }
 
-    /**
-     * Valida si el usuario tiene uno de los roles permitidos.
-     * Si no tiene permiso, lanza una excepción y detiene el proceso.
-     */
     public void validarPermiso(Integer idUsuario, Integer... rolesPermitidos) {
-
-        // 1. Obtener información del usuario (Llamada remota)
         UsuarioDTO usuario;
         try {
             usuario = personasClient.obtenerUsuarioPorId(idUsuario);
@@ -44,12 +37,10 @@ public class SecurityHelper {
 
         Integer rolUsuario = usuario.getIdRol();
 
-        // 2. El Dueño y Admin SIEMPRE tienen permiso (Superusuarios)
         if (rolUsuario.equals(ROL_DUENO) || rolUsuario.equals(ROL_ADMIN)) {
-            return; // Pásale
+            return;
         }
 
-        // 3. Verificar si el rol del usuario está en la lista de permitidos
         List<Integer> permitidos = Arrays.asList(rolesPermitidos);
         if (!permitidos.contains(rolUsuario)) {
             throw new BadRequestException("ACCESO DENEGADO: El usuario '" + usuario.getNombre() +
@@ -57,22 +48,19 @@ public class SecurityHelper {
         }
     }
 
-    // Método extra para validar que sea EL diseñador asignado
     public void validarEsDiseñadorAsignado(Integer idUsuario, Integer idAsignado) {
         UsuarioDTO usuario = personasClient.obtenerUsuarioPorId(idUsuario);
         Integer rol = usuario.getIdRol();
 
-        // Si es Admin/Dueño, pasa.
         if (rol.equals(ROL_DUENO) || rol.equals(ROL_ADMIN))
             return;
 
-        // Si es diseñador, debe ser el asignado
         if (rol.equals(ROL_DISENADOR)) {
             if (idAsignado == null || !idAsignado.equals(idUsuario)) {
-                throw new BadRequestException("ACCESO DENEGADO: Solo el diseñador asignado a esta orden puede avanzar.");
+                throw new BadRequestException(
+                        "ACCESO DENEGADO: Solo el diseñador asignado a esta orden puede avanzar.");
             }
         } else {
-            // Si no es ni diseñador ni admin
             throw new BadRequestException("ACCESO DENEGADO: Se requieren permisos de diseño.");
         }
     }
