@@ -25,7 +25,7 @@ public class OperacionesService {
 
     public List<Producto> buscarProductos(String termino) {
         if (termino == null || termino.trim().isEmpty()) {
-            return productoRepository.findAll(); // O devuelve lista vacía si son muchos
+            return productoRepository.findAll();
         }
         return productoRepository.findByDescripcionContainingIgnoreCase(termino);
     }

@@ -1,6 +1,7 @@
 package com.imprenta.ordenes_service.controller;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,12 +35,12 @@ public class ComprasController {
         Integer idUsuario = (Integer) body.get("idUsuario");
         String descripcion = (String) body.get("descripcion");
         Integer cantidad = (Integer) body.get("cantidad");
-        Integer irOrden = (Integer) body.get("idOrden");
+        Integer idOrden = body.get("idOrden") != null ? (Integer) body.get("idOrden") : null;
 
         SolicitudInsumo solicitud = new SolicitudInsumo();
         solicitud.setDescripcionPersonalizada(descripcion);
         solicitud.setCantidad(cantidad);
-        solicitud.setIdOrden(irOrden);
+        solicitud.setIdOrden(idOrden);
 
         SolicitudInsumo nuevaSolicitud = comprasService.crearSolicitud(solicitud, idUsuario);
 
@@ -56,6 +57,11 @@ public class ComprasController {
         Movimientos egreso = comprasService.registrarCompra(idSolicitud, costoReal, idUsuario);
 
         return ResponseEntity.ok(egreso);
+    }
+
+    @GetMapping("/pendientes")
+    public ResponseEntity<List<SolicitudInsumo>> verPendientes() {
+        return ResponseEntity.ok(comprasService.obtenerPendientes());
     }
 
 }

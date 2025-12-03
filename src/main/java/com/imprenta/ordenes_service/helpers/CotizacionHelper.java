@@ -2,29 +2,29 @@ package com.imprenta.ordenes_service.helpers;
 
 import java.math.BigDecimal;
 import java.util.List;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
+import org.springframework.transaction.annotation.Transactional;
 import com.imprenta.ordenes_service.exception.BadRequestException;
 import com.imprenta.ordenes_service.model.DetalleOrden;
 import com.imprenta.ordenes_service.model.Orden;
 import com.imprenta.ordenes_service.repository.DetalleOrdenRepository;
 import com.imprenta.ordenes_service.repository.OrdenRepository;
 
-import jakarta.transaction.Transactional;
-
 @Service
 public class CotizacionHelper {
 
     private final OrdenRepository ordenRepository;
     private final DetalleOrdenRepository detalleOrdenRepository;
+    private final SecurityHelper securityHelper;
 
     @Autowired
     public CotizacionHelper(OrdenRepository ordenRepository,
-            DetalleOrdenRepository detalleOrdenRepository) {
+            DetalleOrdenRepository detalleOrdenRepository,
+            SecurityHelper securityHelper) {
         this.ordenRepository = ordenRepository;
         this.detalleOrdenRepository = detalleOrdenRepository;
+        this.securityHelper = securityHelper;
     }
 
     @Transactional
@@ -32,6 +32,16 @@ public class CotizacionHelper {
 
         if (orden == null || detalles == null || detalles.isEmpty()) {
             throw new BadRequestException("Faltan datos para la cotización");
+        }
+
+        securityHelper.validarPermiso(orden.getIdUsuario(),
+                SecurityHelper.ROL_MOSTRADOR,
+                SecurityHelper.ROL_DUENO,
+                SecurityHelper.ROL_ADMIN,
+                SecurityHelper.ROL_CONTADORA);
+
+        if (orden.getPlazoEstimadoDias() == null || orden.getPlazoEstimadoDias() <= 0) {
+            orden.setPlazoEstimadoDias(3);
         }
 
         BigDecimal totalCalculado = calcularTotal(detalles);
@@ -43,7 +53,6 @@ public class CotizacionHelper {
         }
 
         Orden ordenGuardada = ordenRepository.save(orden);
-
         guardarDetallesDeLaOrden(ordenGuardada.getIdOrden(), detalles);
 
         return ordenGuardada;
@@ -60,11 +69,11 @@ public class CotizacionHelper {
     private BigDecimal calcularTotal(List<DetalleOrden> detalles) {
         BigDecimal total = BigDecimal.ZERO;
         for (DetalleOrden detalle : detalles) {
+            // (Opcional: Aquí podrías validar que precio * cantidad = importe)
             if (detalle.getImporte() != null) {
                 total = total.add(detalle.getImporte());
             }
         }
         return total;
     }
-
 }

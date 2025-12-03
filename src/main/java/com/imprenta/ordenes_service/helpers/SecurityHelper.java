@@ -1,7 +1,6 @@
 package com.imprenta.ordenes_service.helpers;
 
 import java.util.Arrays;
-
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -28,34 +27,28 @@ public class SecurityHelper {
     }
 
     public void validarPermiso(Integer idUsuario, Integer... rolesPermitidos) {
-        UsuarioDTO usuario;
-        try {
-            usuario = personasClient.obtenerUsuarioPorId(idUsuario);
-        } catch (Exception e) {
-            throw new BadRequestException("Error de seguridad: No se pudo validar la identidad del usuario.");
-        }
-
+        UsuarioDTO usuario = obtenerUsuarioSeguro(idUsuario);
         Integer rolUsuario = usuario.getIdRol();
 
-        if (rolUsuario.equals(ROL_DUENO) || rolUsuario.equals(ROL_ADMIN)) {
+        if (ROL_DUENO.equals(rolUsuario) || ROL_ADMIN.equals(rolUsuario)) {
             return;
         }
 
         List<Integer> permitidos = Arrays.asList(rolesPermitidos);
         if (!permitidos.contains(rolUsuario)) {
             throw new BadRequestException("ACCESO DENEGADO: El usuario '" + usuario.getNombre() +
-                    "' no tiene los permisos necesarios para realizar esta acción.");
+                    "' no tiene los permisos necesarios.");
         }
     }
 
     public void validarEsDiseñadorAsignado(Integer idUsuario, Integer idAsignado) {
-        UsuarioDTO usuario = personasClient.obtenerUsuarioPorId(idUsuario);
+        UsuarioDTO usuario = obtenerUsuarioSeguro(idUsuario);
         Integer rol = usuario.getIdRol();
 
-        if (rol.equals(ROL_DUENO) || rol.equals(ROL_ADMIN))
+        if (ROL_DUENO.equals(rol) || ROL_ADMIN.equals(rol))
             return;
 
-        if (rol.equals(ROL_DISENADOR)) {
+        if (ROL_DISENADOR.equals(rol)) {
             if (idAsignado == null || !idAsignado.equals(idUsuario)) {
                 throw new BadRequestException(
                         "ACCESO DENEGADO: Solo el diseñador asignado a esta orden puede avanzar.");
@@ -65,4 +58,16 @@ public class SecurityHelper {
         }
     }
 
+    private UsuarioDTO obtenerUsuarioSeguro(Integer idUsuario) {
+        try {
+            UsuarioDTO u = personasClient.obtenerUsuarioPorId(idUsuario);
+            if (u == null || u.getIdRol() == null) {
+                throw new RuntimeException("Usuario o Rol nulo");
+            }
+            return u;
+        } catch (Exception e) {
+            throw new BadRequestException(
+                    "Error de seguridad: No se pudo validar la identidad del usuario ID " + idUsuario);
+        }
+    }
 }

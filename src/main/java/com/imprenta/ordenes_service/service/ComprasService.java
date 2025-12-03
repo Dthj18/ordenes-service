@@ -59,7 +59,7 @@ public class ComprasService {
 
         Movimientos egreso = new Movimientos();
         egreso.setIdTipoMovimiento(TIPO_EGRESO);
-        egreso.setMonto(costoReal.negate());
+        egreso.setMonto(costoReal.abs().negate());
         egreso.setConcepto("Compra de material: " + solicitud.getDescripcionPersonalizada());
         egreso.setFechaMovimiento(LocalDateTime.now());
         egreso.setIdUsuarioRegistro(idUsuarioAdmin);

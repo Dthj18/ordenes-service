@@ -2,10 +2,9 @@ package com.imprenta.ordenes_service.helpers;
 
 import java.time.LocalDateTime;
 import java.util.List;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
+import org.springframework.transaction.annotation.Transactional;
 import com.imprenta.ordenes_service.dto.reportes.HistorialOrdenDTO;
 import com.imprenta.ordenes_service.exception.ResourceNotFoundException;
 import com.imprenta.ordenes_service.model.CatEstatus;
@@ -14,8 +13,6 @@ import com.imprenta.ordenes_service.model.Trazabilidad;
 import com.imprenta.ordenes_service.repository.CatEstatusRepository;
 import com.imprenta.ordenes_service.repository.OrdenRepository;
 import com.imprenta.ordenes_service.repository.TrazabilidadRepository;
-
-import jakarta.transaction.Transactional;
 
 @Service
 public class TrazabilidadHelper {
@@ -36,30 +33,21 @@ public class TrazabilidadHelper {
     @Transactional
     public Trazabilidad registrarCambio(Integer idOrden, String claveEstatus, Integer idUsuario) {
         CatEstatus estatus = catEstatusRepository.findByClave(claveEstatus)
-                .orElseThrow(() -> new ResourceNotFoundException("Estatus no encontrado" + claveEstatus));
+                .orElseThrow(() -> new ResourceNotFoundException("Estatus no encontrado: " + claveEstatus));
 
         Integer nuevoEstatusId = estatus.getIdEstatus();
 
-        Orden orden = ordenRepository.findById(idOrden)
-                .orElseThrow(() -> new ResourceNotFoundException("Orden no encontrada" + idOrden));
-
-        orden.setIdEstatusActual(nuevoEstatusId);
-        ordenRepository.save(orden);
-
-        Trazabilidad nuevaTraza = new Trazabilidad();
-        nuevaTraza.setIdOrden(idOrden);
-        nuevaTraza.setIdEstatus(nuevoEstatusId);
-        nuevaTraza.setIdUsuario(idUsuario);
-        nuevaTraza.setFechaActualizacion(LocalDateTime.now());
-
-        return trazabilidadRepository.save(nuevaTraza);
+        return ejecutarCambio(idOrden, nuevoEstatusId, idUsuario);
     }
 
     @Transactional
     public Trazabilidad registrarCambioPorId(Integer idOrden, Integer nuevoEstatusId, Integer idUsuario) {
+        return ejecutarCambio(idOrden, nuevoEstatusId, idUsuario);
+    }
 
+    private Trazabilidad ejecutarCambio(Integer idOrden, Integer nuevoEstatusId, Integer idUsuario) {
         Orden orden = ordenRepository.findById(idOrden)
-                .orElseThrow(() -> new ResourceNotFoundException("Orden no encontrada"));
+                .orElseThrow(() -> new ResourceNotFoundException("Orden no encontrada con ID: " + idOrden));
 
         orden.setIdEstatusActual(nuevoEstatusId);
         ordenRepository.save(orden);
@@ -74,6 +62,9 @@ public class TrazabilidadHelper {
     }
 
     public List<HistorialOrdenDTO> obtenerHistorial(Integer idOrden) {
+        if (!ordenRepository.existsById(idOrden)) {
+            throw new ResourceNotFoundException("Orden no encontrada con ID: " + idOrden);
+        }
         return trazabilidadRepository.obtenerHistorialPorOrden(idOrden);
     }
 }

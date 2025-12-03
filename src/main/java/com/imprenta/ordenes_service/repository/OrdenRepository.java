@@ -1,5 +1,6 @@
 package com.imprenta.ordenes_service.repository;
 
+import com.imprenta.ordenes_service.dto.OrdenAsignadaDTO;
 import com.imprenta.ordenes_service.dto.reportes.OrdenCardDTO;
 import com.imprenta.ordenes_service.model.Orden;
 
@@ -47,4 +48,24 @@ public interface OrdenRepository extends JpaRepository<Orden, Integer> {
             ORDER BY o.fecha_creacion DESC
             """, nativeQuery = true)
     List<OrdenCardDTO> obtenerTarjetasMovil();
+
+    @Query(value = """
+            SELECT
+                o.id_orden as idOrden,
+                o.id_usuario_disenador as idDisenador,
+                TO_CHAR(o.fecha_entrega_formal, 'DD Mon') as fechaEntrega,
+                ce.descripcion as estatus,
+
+                -- Subquery para traer nombre del producto principal
+                (SELECT p.descripcion FROM detalle_orden do2
+                 JOIN productos p ON do2.id_producto = p.id_producto
+                 WHERE do2.id_orden = o.id_orden LIMIT 1) as producto
+
+            FROM ordenes o
+            JOIN cat_estatus ce ON o.id_estatus_actual = ce.id_estatus
+            WHERE o.id_usuario_disenador IS NOT NULL
+              AND o.id_estatus_actual IN (3, 4, 7, 8, 10) -- Solo fases de diseño
+            ORDER BY o.fecha_entrega_formal ASC
+            """, nativeQuery = true)
+    List<OrdenAsignadaDTO> obtenerOrdenesPorDisenador();
 }
