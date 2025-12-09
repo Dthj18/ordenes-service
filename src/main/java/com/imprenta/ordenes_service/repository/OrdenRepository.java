@@ -1,6 +1,8 @@
 package com.imprenta.ordenes_service.repository;
 
 import com.imprenta.ordenes_service.dto.OrdenAsignadaDTO;
+import com.imprenta.ordenes_service.dto.reportes.GraficaPastelDTO;
+import com.imprenta.ordenes_service.dto.reportes.GraficaRadarDTO;
 import com.imprenta.ordenes_service.dto.reportes.OrdenCardDTO;
 import com.imprenta.ordenes_service.model.Orden;
 
@@ -37,7 +39,7 @@ public interface OrdenRepository extends JpaRepository<Orden, Integer> {
             FROM ordenes o
             JOIN clientes c ON o.id_cliente = c.id_cliente
             JOIN cat_estatus ce ON o.id_estatus_actual = ce.id_estatus
-            JOIN usuarios u ON o.id_usuario = u.id_usuario -- JOIN para el Encargado
+            JOIN usuarios u ON o.id_usuario = u.id_usuario
             LEFT JOIN LATERAL (
                 SELECT p.descripcion
                 FROM detalle_orden do2
@@ -64,8 +66,33 @@ public interface OrdenRepository extends JpaRepository<Orden, Integer> {
             FROM ordenes o
             JOIN cat_estatus ce ON o.id_estatus_actual = ce.id_estatus
             WHERE o.id_usuario_disenador IS NOT NULL
-              AND o.id_estatus_actual IN (3, 4, 7, 8, 10) -- Solo fases de diseño
+              AND o.id_estatus_actual IN (3, 4, 7, 8, 10)
             ORDER BY o.fecha_entrega_formal ASC
             """, nativeQuery = true)
     List<OrdenAsignadaDTO> obtenerOrdenesPorDisenador();
+
+    @Query(value = """
+            SELECT
+                CASE
+                    WHEN id_estatus_actual = 1 THEN 'Pendientes'
+                    WHEN id_estatus_actual = 11 THEN 'Canceladas'
+                    ELSE 'Aprobadas'
+                END as categoria,
+                COUNT(*) as cantidad
+            FROM ordenes
+            GROUP BY categoria
+            """, nativeQuery = true)
+    List<GraficaPastelDTO> obtenerResumenEstatus();
+
+    @Query(value = """
+            SELECT
+                r.descripcion AS etiqueta,
+                COUNT(o.id_orden) AS valor
+            FROM ordenes o
+            JOIN cat_razones_cancelacion r ON o.id_razon_cancelacion = r.id_razon
+            WHERE o.id_estatus_actual = 11
+            GROUP BY r.descripcion
+            ORDER BY valor DESC
+            """, nativeQuery = true)
+    List<GraficaRadarDTO> obtenerRazonesRechazo();
 }

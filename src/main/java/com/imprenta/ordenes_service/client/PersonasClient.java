@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 
 import com.imprenta.ordenes_service.dto.UsuarioDTO;
 
-@FeignClient(name = "personas-service", url = "http://localhost:8083")
+@FeignClient(name = "personas-service", url = "http://10.0.0.1:8081")
 public interface PersonasClient {
 
     @GetMapping("/api/usuarios/{id}")
