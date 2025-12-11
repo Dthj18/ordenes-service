@@ -2,6 +2,7 @@ package com.imprenta.ordenes_service.service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -20,13 +21,17 @@ import com.imprenta.ordenes_service.helpers.FileStorageHelper;
 import com.imprenta.ordenes_service.helpers.MovimientosHelper;
 import com.imprenta.ordenes_service.helpers.SecurityHelper;
 import com.imprenta.ordenes_service.helpers.TrazabilidadHelper;
+import com.imprenta.ordenes_service.model.CatEstatus;
 import com.imprenta.ordenes_service.model.Movimientos;
 import com.imprenta.ordenes_service.model.Orden;
 import com.imprenta.ordenes_service.model.Trazabilidad;
+import com.imprenta.ordenes_service.repository.CatEstatusRepository;
 import com.imprenta.ordenes_service.repository.OrdenRepository;
 import com.imprenta.ordenes_service.service.states.OrdenState;
 import com.imprenta.ordenes_service.service.states.OrdenStateFactory;
 import com.imprenta.ordenes_service.dto.reportes.HistorialOrdenDTO;
+
+import jakarta.persistence.criteria.CriteriaBuilder.In;
 import jakarta.transaction.Transactional;
 
 @Service
@@ -38,6 +43,7 @@ public class OrdenService {
     private final OrdenStateFactory stateFactory;
     private final FileStorageHelper fileStorageHelper;
     private final SecurityHelper securityHelper;
+    private final CatEstatusRepository catEstatusRepository;
 
     private static final String ESTATUS_INICIAL = "COT_INICIADA";
     private static final Integer ID_ESTATUS_CANCELADA = 11;
@@ -49,7 +55,8 @@ public class OrdenService {
             MovimientosHelper movimientosHelper,
             OrdenStateFactory stateFactory,
             FileStorageHelper fileStorageHelper,
-            SecurityHelper securityHelper) {
+            SecurityHelper securityHelper,
+            CatEstatusRepository catEstatusRepository) {
         this.ordenRepository = ordenRepository;
         this.cotizacionHelper = cotizacionHelper;
         this.trazabilidadHelper = trazabilidadHelper;
@@ -57,6 +64,7 @@ public class OrdenService {
         this.stateFactory = stateFactory;
         this.fileStorageHelper = fileStorageHelper;
         this.securityHelper = securityHelper;
+        this.catEstatusRepository = catEstatusRepository;
     }
 
     @Transactional
@@ -87,9 +95,9 @@ public class OrdenService {
         return ordenRepository.findAll(pageable);
     }
 
-    //public List<Orden> findAll() {
-    //  return ordenRepository.findAll();
-    //}
+    // public List<Orden> findAll() {
+    // return ordenRepository.findAll();
+    // }
 
     public Orden findById(Integer id) {
         return ordenRepository.findById(id)
@@ -103,6 +111,23 @@ public class OrdenService {
         Integer idSiguientePaso = estadoActual.procesarSiguientePaso(orden, idUsuario, params);
 
         return trazabilidadHelper.registrarCambioPorId(idOrden, idSiguientePaso, idUsuario);
+    }
+
+    @Transactional
+    public Map<String, Object> obtenerEstatusActual(Integer idOrden) {
+        Orden orden = ordenRepository.findById(idOrden)
+                .orElseThrow(() -> new ResourceNotFoundException("Orden no encontrada con ID: " + idOrden));
+
+        CatEstatus estatus = catEstatusRepository.findById(orden.getIdEstatusActual())
+                .orElseThrow(() -> new ResourceNotFoundException("Estatus no encontrado en el cátalogo"));
+
+        Map<String, Object> respuesta = new HashMap<>();
+        respuesta.put("idOrden", orden.getIdOrden());
+        respuesta.put("idEstatus", orden.getIdEstatusActual());
+        respuesta.put("clave", estatus.getClave());
+        respuesta.put("descripcion", estatus.getDescripcion());
+
+        return respuesta;
     }
 
     @Transactional
@@ -163,6 +188,14 @@ public class OrdenService {
             throw new ResourceNotFoundException("Orden no encontrada: " + idOrden);
         }
         return trazabilidadHelper.obtenerHistorial(idOrden);
+    }
+
+    public Orden actualizarCondicionPago(Integer idOrden, Integer nuevaCondicion) {
+        Orden orden = ordenRepository.findById(idOrden)
+                .orElseThrow(() -> new ResourceNotFoundException("Orden no encontrada con ID: " + idOrden));
+
+        orden.setIdCondicionPago(nuevaCondicion);
+        return ordenRepository.save(orden);
     }
 
 }

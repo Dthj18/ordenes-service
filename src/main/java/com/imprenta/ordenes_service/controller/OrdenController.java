@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import com.imprenta.ordenes_service.dto.ActualizarCondicionPagoDTO;
 import com.imprenta.ordenes_service.dto.CambiarEstatusDTO;
 import com.imprenta.ordenes_service.dto.CrearOrdenDTO;
 import com.imprenta.ordenes_service.dto.reportes.HistorialOrdenDTO;
@@ -73,6 +74,14 @@ public class OrdenController {
 
     }
 
+    @PutMapping("/{idOrden}/condicion-pago")
+    public ResponseEntity<Orden> actualizarCondicionPago(
+            @PathVariable Integer idOrden,
+            @RequestBody ActualizarCondicionPagoDTO dto) {
+        Orden ordenActualizada = ordenService.actualizarCondicionPago(idOrden, dto.getIdCondicionPago());
+        return ResponseEntity.ok(ordenActualizada);
+    }
+
     @PostMapping("/{idOrden}/estatus")
     public ResponseEntity<Trazabilidad> cambiarEstatusDeOrden(
             @PathVariable Integer idOrden,
@@ -85,6 +94,13 @@ public class OrdenController {
 
         return ResponseEntity.status(HttpStatus.CREATED).body(nuevaTraza);
 
+    }
+
+    @GetMapping("/{idOrden}/estatus")
+    public ResponseEntity<Map<String, Object>> obtenerEstatusDeOrden(@PathVariable Integer idOrden) {
+
+        Map<String, Object> respuesta = ordenService.obtenerEstatusActual(idOrden);
+        return ResponseEntity.ok(respuesta);
     }
 
     @GetMapping

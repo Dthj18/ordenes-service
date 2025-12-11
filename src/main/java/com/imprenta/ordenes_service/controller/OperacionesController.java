@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.imprenta.ordenes_service.dto.OrdenAsignadaDTO;
 import com.imprenta.ordenes_service.model.CatCondicionesPago;
+import com.imprenta.ordenes_service.model.CatEstatus;
 import com.imprenta.ordenes_service.model.CatRazonesCancelacion;
 import com.imprenta.ordenes_service.model.CatRegimenFiscal;
 import com.imprenta.ordenes_service.model.CatSolicitudEstatus;
@@ -85,4 +86,9 @@ public class OperacionesController {
         return ResponseEntity.ok(catalagosService.obtenerTiposMovimiento());
     }
 
+    @GetMapping("/estatus")
+    public ResponseEntity<List<CatEstatus>> obtenerEstatus() {
+        return ResponseEntity.ok(catalagosService.obtenerEstatus());
+
+    }
 }

@@ -5,11 +5,13 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.imprenta.ordenes_service.model.CatEstatus;
 import com.imprenta.ordenes_service.model.CatRazonesCancelacion;
 import com.imprenta.ordenes_service.model.CatRegimenFiscal;
 import com.imprenta.ordenes_service.model.CatSolicitudEstatus;
 import com.imprenta.ordenes_service.model.CatTipoMovimiento;
 import com.imprenta.ordenes_service.model.CatUsoCfdi;
+import com.imprenta.ordenes_service.repository.CatEstatusRepository;
 import com.imprenta.ordenes_service.repository.CatRazonesCancelacionRepository;
 import com.imprenta.ordenes_service.repository.CatRegimenFiscalRepository;
 import com.imprenta.ordenes_service.repository.CatSolicitudEstatusRepository;
@@ -29,6 +31,8 @@ public class CatalagosService {
     private CatSolicitudEstatusRepository catSolicitudEstatusRepository;
     @Autowired
     private CatTipoMovimientoRepository catTipoMovimientoRepository;
+    @Autowired
+    private CatEstatusRepository catEstatusRepository;
 
     public List<CatRazonesCancelacion> obtenerRazonesCancelacion() {
         return catRazonesCancelacionRepository.findAll();
@@ -48,6 +52,10 @@ public class CatalagosService {
 
     public List<CatTipoMovimiento> obtenerTiposMovimiento() {
         return catTipoMovimientoRepository.findAll();
+    }
+
+    public List<CatEstatus> obtenerEstatus() {
+        return catEstatusRepository.findAll();
     }
 
 }
