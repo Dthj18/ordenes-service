@@ -6,10 +6,11 @@ import com.imprenta.ordenes_service.dto.reportes.GraficaRadarDTO;
 import com.imprenta.ordenes_service.dto.reportes.OrdenCardDTO;
 import com.imprenta.ordenes_service.model.Orden;
 
+import java.time.LocalDate;
 import java.util.List;
-
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -72,17 +73,20 @@ public interface OrdenRepository extends JpaRepository<Orden, Integer> {
     List<OrdenAsignadaDTO> obtenerOrdenesPorDisenador();
 
     @Query(value = """
-            SELECT
-                CASE
-                    WHEN id_estatus_actual = 1 THEN 'Pendientes'
-                    WHEN id_estatus_actual = 11 THEN 'Canceladas'
-                    ELSE 'Aprobadas'
-                END as categoria,
-                COUNT(*) as cantidad
-            FROM ordenes
-            GROUP BY categoria
-            """, nativeQuery = true)
-    List<GraficaPastelDTO> obtenerResumenEstatus();
+                        SELECT
+                            CASE
+                                WHEN id_estatus_actual = 1 THEN 'Pendientes'
+                                WHEN id_estatus_actual = 11 THEN 'Canceladas'
+                                ELSE 'Aprobadas'
+                            END as categoria,
+                            COUNT(*) as cantidad
+            FROM ordenes o
+                    WHERE
+                        -- Si la fecha es NULL, trae todo. Si tiene valor, filtra por ese día.
+                        (CAST(:fecha AS DATE) IS NULL OR CAST(o.fecha_creacion AS DATE) = CAST(:fecha AS DATE))
+                    GROUP BY categoria
+                    """, nativeQuery = true)
+    List<GraficaPastelDTO> obtenerResumenEstatus(@Param("fecha") LocalDate fecha);
 
     @Query(value = """
             SELECT
@@ -90,9 +94,13 @@ public interface OrdenRepository extends JpaRepository<Orden, Integer> {
                 COUNT(o.id_orden) AS valor
             FROM ordenes o
             JOIN cat_razones_cancelacion r ON o.id_razon_cancelacion = r.id_razon
-            WHERE o.id_estatus_actual = 11
+            WHERE
+                o.id_estatus_actual = 11
+                AND
+                -- El mismo filtro de fecha aquí
+                (CAST(:fecha AS DATE) IS NULL OR CAST(o.fecha_creacion AS DATE) = CAST(:fecha AS DATE))
             GROUP BY r.descripcion
             ORDER BY valor DESC
             """, nativeQuery = true)
-    List<GraficaRadarDTO> obtenerRazonesRechazo();
+    List<GraficaRadarDTO> obtenerRazonesRechazo(@Param("fecha") LocalDate fecha);
 }

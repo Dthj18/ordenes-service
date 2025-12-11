@@ -1,6 +1,7 @@
 package com.imprenta.ordenes_service.helpers;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime; // <--- AGREGADO: Import necesario para la fecha
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -44,6 +45,10 @@ public class CotizacionHelper {
             orden.setPlazoEstimadoDias(3);
         }
 
+        if (orden.getFechaCreacion() == null) {
+            orden.setFechaCreacion(LocalDateTime.now());
+        }
+
         BigDecimal totalCalculado = calcularTotal(detalles);
         orden.setMontoTotal(totalCalculado);
 
@@ -59,8 +64,12 @@ public class CotizacionHelper {
     }
 
     private void guardarDetallesDeLaOrden(Integer idOrden, List<DetalleOrden> detalles) {
+        Orden ordenRef = new Orden();
+        ordenRef.setIdOrden(idOrden);
+
         for (DetalleOrden detalle : detalles) {
-            detalle.setIdOrden(idOrden);
+            detalle.setOrden(ordenRef);
+
             detalle.setIdDetalle(null);
             detalleOrdenRepository.save(detalle);
         }
@@ -69,7 +78,6 @@ public class CotizacionHelper {
     private BigDecimal calcularTotal(List<DetalleOrden> detalles) {
         BigDecimal total = BigDecimal.ZERO;
         for (DetalleOrden detalle : detalles) {
-            // (Opcional: Aquí podrías validar que precio * cantidad = importe)
             if (detalle.getImporte() != null) {
                 total = total.add(detalle.getImporte());
             }

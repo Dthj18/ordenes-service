@@ -1,5 +1,6 @@
 package com.imprenta.ordenes_service.service;
 
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,13 +22,13 @@ public class GraficasService {
         this.ordenRepository = ordenRepository;
     }
 
-    public Map<String, Object> obtenerDatosGraficasMovil() {
+    public Map<String, Object> obtenerDatosGraficasMovil(Integer idUsuario, LocalDate fecha) {
         Map<String, Object> respuesta = new HashMap<>();
 
-        List<GraficaPastelDTO> pastel = ordenRepository.obtenerResumenEstatus();
+        List<GraficaPastelDTO> pastel = ordenRepository.obtenerResumenEstatus(fecha);
         respuesta.put("datosPastel", pastel);
 
-        List<GraficaRadarDTO> radar = ordenRepository.obtenerRazonesRechazo();
+        List<GraficaRadarDTO> radar = ordenRepository.obtenerRazonesRechazo(fecha);
         respuesta.put("datosRadar", radar);
 
         return respuesta;

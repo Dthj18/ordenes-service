@@ -3,11 +3,18 @@ package com.imprenta.ordenes_service.model;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
 @Entity
@@ -63,6 +70,10 @@ public class Orden {
 
     @Column(name = "id_razon_cancelacion")
     private Integer idRazonCancelacion;
+
+    @OneToMany(mappedBy = "orden", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @JsonManagedReference 
+    private List<DetalleOrden> detalles;
 
     public Orden() {
 
@@ -194,6 +205,18 @@ public class Orden {
 
     public void setIdRazonCancelacion(Integer idRazonCancelacion) {
         this.idRazonCancelacion = idRazonCancelacion;
+    }
+    public List<DetalleOrden> getDetalles() {
+        return detalles;
+    }
+
+    public void setDetalles(List<DetalleOrden> detalles) {
+        this.detalles = detalles;
+        if(detalles != null) {
+            for(DetalleOrden detalle : detalles) {
+                detalle.setOrden(this);
+            }
+        }
     }
 
 }

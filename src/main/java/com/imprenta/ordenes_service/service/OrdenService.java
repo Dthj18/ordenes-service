@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -80,9 +82,14 @@ public class OrdenService {
         return trazabilidadHelper.registrarCambio(idOrden, nuevaClaveEstatus, idUsuario);
     }
 
-    public List<Orden> findAll() {
-        return ordenRepository.findAll();
+    @Transactional
+    public Page<Orden> findAll(Pageable pageable) {
+        return ordenRepository.findAll(pageable);
     }
+
+    //public List<Orden> findAll() {
+    //  return ordenRepository.findAll();
+    //}
 
     public Orden findById(Integer id) {
         return ordenRepository.findById(id)

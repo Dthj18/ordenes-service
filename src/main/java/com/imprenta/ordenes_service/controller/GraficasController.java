@@ -1,5 +1,6 @@
 package com.imprenta.ordenes_service.controller;
 
+import java.time.LocalDate;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,13 +27,13 @@ public class GraficasController {
     }
 
     @GetMapping("/movil/graficas")
-    public ResponseEntity<Map<String, Object>> getGraficasMovil(@RequestParam Integer idUsuario) {
+    public ResponseEntity<Map<String, Object>> getGraficasMovil(@RequestParam Integer idUsuario, @RequestParam(required = false) LocalDate fecha) {
 
         securityHelper.validarPermiso(idUsuario,
                 SecurityHelper.ROL_DUENO,
                 SecurityHelper.ROL_ADMIN);
 
-        return ResponseEntity.ok(graficasService.obtenerDatosGraficasMovil());
+        return ResponseEntity.ok(graficasService.obtenerDatosGraficasMovil(idUsuario, fecha));
     }
 
 }
