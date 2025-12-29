@@ -71,8 +71,11 @@ public class Orden {
     @Column(name = "id_razon_cancelacion")
     private Integer idRazonCancelacion;
 
+    @Column(name = "notas_diseno", columnDefinition = "TEXT")
+    private String notasDiseno;
+
     @OneToMany(mappedBy = "orden", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
-    @JsonManagedReference 
+    @JsonManagedReference
     private List<DetalleOrden> detalles;
 
     public Orden() {
@@ -206,14 +209,23 @@ public class Orden {
     public void setIdRazonCancelacion(Integer idRazonCancelacion) {
         this.idRazonCancelacion = idRazonCancelacion;
     }
+
     public List<DetalleOrden> getDetalles() {
         return detalles;
     }
 
+    public String getNotasDiseno() {
+        return notasDiseno;
+    }
+
+    public void setNotasDiseno(String notasDiseno) {
+        this.notasDiseno = notasDiseno;
+    }
+
     public void setDetalles(List<DetalleOrden> detalles) {
         this.detalles = detalles;
-        if(detalles != null) {
-            for(DetalleOrden detalle : detalles) {
+        if (detalles != null) {
+            for (DetalleOrden detalle : detalles) {
                 detalle.setOrden(this);
             }
         }

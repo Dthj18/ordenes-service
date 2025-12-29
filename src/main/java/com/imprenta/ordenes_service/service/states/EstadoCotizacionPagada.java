@@ -1,6 +1,5 @@
 package com.imprenta.ordenes_service.service.states;
 
-import com.imprenta.ordenes_service.exception.BadRequestException;
 import com.imprenta.ordenes_service.helpers.AlmacenHelper;
 import com.imprenta.ordenes_service.helpers.SecurityHelper;
 import com.imprenta.ordenes_service.model.Orden;
@@ -36,12 +35,14 @@ public class EstadoCotizacionPagada implements OrdenState {
     public Integer procesarSiguientePaso(Orden orden, Integer idUsuario, Map<String, Object> params) {
 
         securityHelper.validarPermiso(idUsuario,
+                SecurityHelper.ROL_DISENADOR,
                 SecurityHelper.ROL_JEFE_TALLER);
 
         Boolean hayInsumos = (Boolean) params.get("hayInsumos");
 
+        // Si el usuario no mandó nada (null), asumimos por defecto que SÍ hay insumos
         if (hayInsumos == null) {
-            throw new BadRequestException("Error: Debes indicar si hay insumos (true/false) para avanzar.");
+            hayInsumos = true;
         }
 
         almacenHelper.procesarDecisionInsumos(orden, hayInsumos);

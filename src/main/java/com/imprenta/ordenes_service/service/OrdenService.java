@@ -2,6 +2,7 @@ package com.imprenta.ordenes_service.service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,7 +32,6 @@ import com.imprenta.ordenes_service.service.states.OrdenState;
 import com.imprenta.ordenes_service.service.states.OrdenStateFactory;
 import com.imprenta.ordenes_service.dto.reportes.HistorialOrdenDTO;
 
-import jakarta.persistence.criteria.CriteriaBuilder.In;
 import jakarta.transaction.Transactional;
 
 @Service
@@ -47,6 +47,7 @@ public class OrdenService {
 
     private static final String ESTATUS_INICIAL = "COT_INICIADA";
     private static final Integer ID_ESTATUS_CANCELADA = 11;
+    private final List<Integer> IDS_NO_ORDENES = Arrays.asList(1, 11);
 
     @Autowired
     public OrdenService(OrdenRepository ordenRepository,
@@ -95,6 +96,14 @@ public class OrdenService {
         return ordenRepository.findAll(pageable);
     }
 
+    public Page<Orden> obtenerSoloOrdenes(Pageable pageable) {
+        return ordenRepository.findByIdEstatusActualNotIn(IDS_NO_ORDENES, pageable);
+    }
+
+    public Page<Orden> obtenerCotizacionesYCanceladas(Pageable pageable) {
+        return ordenRepository.findByIdEstatusActualIn(IDS_NO_ORDENES, pageable);
+    }
+
     // public List<Orden> findAll() {
     // return ordenRepository.findAll();
     // }
@@ -133,10 +142,7 @@ public class OrdenService {
     @Transactional
     public Orden asignarDisenador(Integer idOrden, Integer idUsuarioDisenador) {
         Orden orden = ordenRepository.findById(idOrden)
-                .orElseThrow(() -> new ResourceNotFoundException("Orden no encontrada"));
-
-        // (Opcional) Aquí podrías validar con FeignClient si el usuario realmente es un
-        // Diseñador
+                .orElseThrow(() -> new ResourceNotFoundException("Orden no encontrada con ID: " + idOrden));
 
         orden.setIdUsuarioDisenador(idUsuarioDisenador);
         return ordenRepository.save(orden);
@@ -196,6 +202,13 @@ public class OrdenService {
 
         orden.setIdCondicionPago(nuevaCondicion);
         return ordenRepository.save(orden);
+    }
+
+    public Page<Orden> obtenerPendientesDiseñador(Integer idDisenador, Pageable pageable) {
+        return ordenRepository.findByIdUsuarioDisenadorAndIdEstatusActualNotIn(
+                idDisenador,
+                IDS_NO_ORDENES,
+                pageable);
     }
 
 }

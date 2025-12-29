@@ -24,4 +24,6 @@ public interface OrdenCardDTO {
     String getFechaEntrega();
 
     String getDescripcionEstatus();
+
+    String getDetallesJson();
 }

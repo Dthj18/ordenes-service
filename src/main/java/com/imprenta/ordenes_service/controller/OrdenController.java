@@ -110,6 +110,22 @@ public class OrdenController {
         return ResponseEntity.ok(pagina);
     }
 
+    @GetMapping("/activas")
+    public ResponseEntity<Page<Orden>> obtenerOrdenesActivas(
+            @PageableDefault(size = 10, page = 0) Pageable pageable) {
+
+        Page<Orden> pagina = ordenService.obtenerSoloOrdenes(pageable);
+        return ResponseEntity.ok(pagina);
+    }
+
+    @GetMapping("/cotizacion-cancelacion")
+    public ResponseEntity<Page<Orden>> obtenerArchivo(
+            @PageableDefault(size = 10, page = 0) Pageable pageable) {
+
+        Page<Orden> pagina = ordenService.obtenerCotizacionesYCanceladas(pageable);
+        return ResponseEntity.ok(pagina);
+    }
+
     // @GetMapping
     // public ResponseEntity<List<Orden>> obtenerTodasLasOrdenes() {
     // List<Orden> ordenes = ordenService.findAll();
@@ -187,5 +203,14 @@ public class OrdenController {
     @GetMapping("/{idOrden}/historial")
     public ResponseEntity<List<HistorialOrdenDTO>> obtenerHistorial(@PathVariable Integer idOrden) {
         return ResponseEntity.ok(ordenService.obtenerHistorialOrden(idOrden));
+    }
+
+    @GetMapping("/por-disenador/{idDisenador}")
+    public ResponseEntity<Page<Orden>> getOrdenesPorDisenador(
+            @PathVariable Integer idDisenador,
+            @PageableDefault(size = 10, page = 0) Pageable pageable) {
+
+        Page<Orden> ordenes = ordenService.obtenerPendientesDiseñador(idDisenador, pageable);
+        return ResponseEntity.ok(ordenes);
     }
 }
