@@ -3,10 +3,13 @@ package com.imprenta.ordenes_service.helpers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.imprenta.ordenes_service.dto.CrearSolicitudDTO;
+import com.imprenta.ordenes_service.dto.ProductoSolicitudDTO;
 import com.imprenta.ordenes_service.model.Orden;
-import com.imprenta.ordenes_service.model.SolicitudInsumo;
 import com.imprenta.ordenes_service.repository.OrdenRepository;
 import com.imprenta.ordenes_service.service.ComprasService;
+
+import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,18 +39,26 @@ public class AlmacenHelper {
             logger.info("Material reservado exitosamente para la Orden #{}", orden.getIdOrden());
 
         } else {
-            logger.warn(
-                    "ALERTA DE STOCK: Faltan insumos para la Orden #{}. Se requiere generar solicitud de compra.",
+            logger.warn("ALERTA DE STOCK: Faltan insumos para la Orden #{}. Se requiere generar solicitud de compra.",
                     orden.getIdOrden());
 
-            SolicitudInsumo solicitud = new SolicitudInsumo();
-            solicitud.setDescripcionPersonalizada("Material faltante para Orden #" + orden.getIdOrden());
-            solicitud.setCantidad(1);
-            solicitud.setIdOrden(orden.getIdOrden());
+            ProductoSolicitudDTO itemDTO = new ProductoSolicitudDTO();
+            itemDTO.setDescripcion("Material faltante para Orden #" + orden.getIdOrden());
+            itemDTO.setCantidad("1");
 
-            comprasService.crearSolicitud(solicitud, 6);
+            CrearSolicitudDTO solicitudDTO = new CrearSolicitudDTO();
+            solicitudDTO.setIdUsuario(6);
+            solicitudDTO.setObservaciones("Generado automáticamente por falta de stock");
 
-            logger.info("📝 Solicitud de compra generada automáticamente.");
+            // ⚠️ IMPORTANTE: Si quieres guardar el ID de la orden, agrégalo al DTO (ver
+            // abajo)
+            // solicitudDTO.setIdOrden(orden.getIdOrden());
+
+            solicitudDTO.setProductos(List.of(itemDTO));
+
+            comprasService.crearSolicitud(solicitudDTO);
+
+            logger.info("Solicitud de compra generada automáticamente.");
         }
     }
 

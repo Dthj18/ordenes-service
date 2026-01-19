@@ -1,11 +1,11 @@
 package com.imprenta.ordenes_service.controller;
 
 import java.math.BigDecimal;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.imprenta.ordenes_service.dto.CrearSolicitudDTO;
 import com.imprenta.ordenes_service.model.Movimientos;
 import com.imprenta.ordenes_service.model.SolicitudInsumo;
 import com.imprenta.ordenes_service.service.ComprasService;
@@ -29,29 +30,42 @@ public class ComprasController {
         this.comprasService = comprasService;
     }
 
+    // --- CAMBIO PRINCIPAL AQUÍ ---
     @PostMapping("/solicitar")
-    public ResponseEntity<SolicitudInsumo> crearSolicitud(@RequestBody Map<String, Object> body) {
+    public ResponseEntity<?> crearSolicitud(@RequestBody CrearSolicitudDTO dto) {
+        try {
+            // Validamos que venga al menos un producto
+            if (dto.getProductos() == null || dto.getProductos().isEmpty()) {
+                return ResponseEntity.badRequest().body("La lista de productos no puede estar vacía");
+            }
 
-        Integer idUsuario = (Integer) body.get("idUsuario");
-        String descripcion = (String) body.get("descripcion");
-        Integer cantidad = (Integer) body.get("cantidad");
-        Integer idOrden = body.get("idOrden") != null ? (Integer) body.get("idOrden") : null;
+            // AHORA el servicio devuelve UN SOLO objeto (La solicitud Padre)
+            SolicitudInsumo solicitudGuardada = comprasService.crearSolicitud(dto);
 
-        SolicitudInsumo solicitud = new SolicitudInsumo();
-        solicitud.setDescripcionPersonalizada(descripcion);
-        solicitud.setCantidad(cantidad);
-        solicitud.setIdOrden(idOrden);
+            Map<String, Object> respuesta = new HashMap<>();
+            
+            // Podemos contar cuántos hijos tiene para el mensaje
+            int cantidadItems = (solicitudGuardada.getDetalles() != null) ? solicitudGuardada.getDetalles().size() : 0;
+            
+            respuesta.put("mensaje", "Solicitud #" + solicitudGuardada.getIdSolicitud() + " creada con " + cantidadItems + " productos.");
+            respuesta.put("solicitud", solicitudGuardada); // Devolvemos el objeto completo con sus hijos
 
-        SolicitudInsumo nuevaSolicitud = comprasService.crearSolicitud(solicitud, idUsuario);
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(nuevaSolicitud);
+            return ResponseEntity.ok(respuesta);
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body("Error al procesar la solicitud: " + e.getMessage());
+        }
     }
 
-    @GetMapping("/{idSolicitud}/comprar")
+    // Este se queda prácticamente igual, solo asegura la conversión de tipos
+    @PostMapping("/{idSolicitud}/comprar")
     public ResponseEntity<Movimientos> registrarCompra(
             @PathVariable Integer idSolicitud,
             @RequestBody Map<String, Object> body) {
-        Integer idUsuario = (Integer) body.get("idUsuario");
+        
+        // Es mejor práctica castear con seguridad
+        Integer idUsuario = Integer.valueOf(body.get("idUsuario").toString());
         BigDecimal costoReal = new BigDecimal(body.get("costoReal").toString());
 
         Movimientos egreso = comprasService.registrarCompra(idSolicitud, costoReal, idUsuario);
@@ -59,6 +73,9 @@ public class ComprasController {
         return ResponseEntity.ok(egreso);
     }
 
+    // Este también sigue igual, devolverá la lista de solicitudes (Padres)
+    // y cada una traerá adentro su lista de detalles (Hijos)
+    
     @GetMapping("/pendientes")
     public ResponseEntity<List<SolicitudInsumo>> verPendientes() {
         return ResponseEntity.ok(comprasService.obtenerPendientes());

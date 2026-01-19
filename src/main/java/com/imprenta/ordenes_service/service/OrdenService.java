@@ -211,4 +211,12 @@ public class OrdenService {
                 pageable);
     }
 
+    public Orden actualizarNotasDiseno(Integer idOrden, String nuevasNotas) {
+        Orden orden = ordenRepository.findById(idOrden)
+                .orElseThrow(() -> new RuntimeException("Orden no encontrada con ID: " + idOrden));
+
+        orden.setNotasDiseno(nuevasNotas);
+        return ordenRepository.save(orden);
+    }
+
 }

@@ -1,11 +1,9 @@
 package com.imprenta.ordenes_service.model;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.time.LocalDateTime; 
 
 @Entity
 @Table(name = "Solicitudes_Insumos")
@@ -22,19 +20,25 @@ public class SolicitudInsumo {
     @Column(name = "id_usuario_solicitante", nullable = false)
     private Integer idUsuarioSolicitante;
 
-    @Column(name = "id_insumo")
-    private Integer idInsumo;
-
-    @Column(name = "descripcion_personalizada")
-    private String descripcionPersonalizada;
-
-    @Column(name = "cantidad", nullable = false)
-    private Integer cantidad;
-
     @Column(name = "id_estatus", nullable = false)
     private Integer idEstatus;
 
+    @Column(name = "fecha_creacion")
+    private LocalDateTime fechaCreacion;
+
+    @OneToMany(mappedBy = "solicitud", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<DetalleSolicitud> detalles;
+
     public SolicitudInsumo() {
+        this.detalles = new ArrayList<>();
+    }
+
+    public void agregarDetalle(DetalleSolicitud detalle) {
+        if (this.detalles == null) {
+            this.detalles = new ArrayList<>();
+        }
+        this.detalles.add(detalle);
+        detalle.setSolicitud(this);
     }
 
     public Integer getIdSolicitud() {
@@ -61,30 +65,6 @@ public class SolicitudInsumo {
         this.idUsuarioSolicitante = idUsuarioSolicitante;
     }
 
-    public Integer getIdInsumo() {
-        return idInsumo;
-    }
-
-    public void setIdInsumo(Integer idInsumo) {
-        this.idInsumo = idInsumo;
-    }
-
-    public String getDescripcionPersonalizada() {
-        return descripcionPersonalizada;
-    }
-
-    public void setDescripcionPersonalizada(String descripcionPersonalizada) {
-        this.descripcionPersonalizada = descripcionPersonalizada;
-    }
-
-    public Integer getCantidad() {
-        return cantidad;
-    }
-
-    public void setCantidad(Integer cantidad) {
-        this.cantidad = cantidad;
-    }
-
     public Integer getIdEstatus() {
         return idEstatus;
     }
@@ -93,4 +73,19 @@ public class SolicitudInsumo {
         this.idEstatus = idEstatus;
     }
 
+    public LocalDateTime getFechaCreacion() {
+        return fechaCreacion;
+    }
+
+    public void setFechaCreacion(LocalDateTime fechaCreacion) {
+        this.fechaCreacion = fechaCreacion;
+    }
+
+    public List<DetalleSolicitud> getDetalles() {
+        return detalles;
+    }
+
+    public void setDetalles(List<DetalleSolicitud> detalles) {
+        this.detalles = detalles;
+    }
 }

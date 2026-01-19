@@ -25,6 +25,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import com.imprenta.ordenes_service.dto.ActualizarCondicionPagoDTO;
 import com.imprenta.ordenes_service.dto.CambiarEstatusDTO;
 import com.imprenta.ordenes_service.dto.CrearOrdenDTO;
+import com.imprenta.ordenes_service.dto.NotasDisenoDTO;
 import com.imprenta.ordenes_service.dto.reportes.HistorialOrdenDTO;
 import com.imprenta.ordenes_service.dto.reportes.OrdenCardDTO;
 import com.imprenta.ordenes_service.exception.BadRequestException;
@@ -212,5 +213,19 @@ public class OrdenController {
 
         Page<Orden> ordenes = ordenService.obtenerPendientesDiseñador(idDisenador, pageable);
         return ResponseEntity.ok(ordenes);
+    }
+
+    @PutMapping("/{idOrden}/notas-diseno")
+    public ResponseEntity<?> updateNotasDiseno(
+            @PathVariable("idOrden") Integer idOrden,
+            @RequestBody NotasDisenoDTO notasDto) {
+        try {
+            Orden ordenActualizada = ordenService.actualizarNotasDiseno(idOrden, notasDto.getNotasDiseno());
+            return ResponseEntity.ok(ordenActualizada);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error al actualizar notas");
+        }
     }
 }
