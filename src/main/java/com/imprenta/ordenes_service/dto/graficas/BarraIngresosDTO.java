@@ -1,11 +1,11 @@
-package com.imprenta.ordenes_service.dto.reportes;
+package com.imprenta.ordenes_service.dto.graficas;
 
-public class BarraGraficaDTO {
+public class BarraIngresosDTO {
     private Double value;
     private String label;
     private String frontColor;
 
-    public BarraGraficaDTO(Double value, String label, String frontColor) {
+    public BarraIngresosDTO(Double value, String label, String frontColor) {
         this.value = value;
         this.label = label;
         this.frontColor = frontColor;

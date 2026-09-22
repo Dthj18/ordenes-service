@@ -5,7 +5,7 @@ import java.util.List;
 public class CrearSolicitudDTO {
     private Integer idUsuario;
     private Integer idOrden;
-    private String observaciones;
+    private String descripcionGeneral;
     private List<ProductoSolicitudDTO> productos;
 
     public Integer getIdUsuario() {
@@ -14,14 +14,6 @@ public class CrearSolicitudDTO {
 
     public void setIdUsuario(Integer idUsuario) {
         this.idUsuario = idUsuario;
-    }
-
-    public String getObservaciones() {
-        return observaciones;
-    }
-
-    public void setObservaciones(String observaciones) {
-        this.observaciones = observaciones;
     }
 
     public List<ProductoSolicitudDTO> getProductos() {
@@ -34,6 +26,14 @@ public class CrearSolicitudDTO {
 
     public Integer getIdOrden() {
         return idOrden;
+    }
+
+    public String getDescripcionGeneral() {
+        return descripcionGeneral;
+    }
+
+    public void setDescripcionGeneral(String descripcionGeneral) {
+        this.descripcionGeneral = descripcionGeneral;
     }
 
     public void setIdOrden(Integer idOrden) {

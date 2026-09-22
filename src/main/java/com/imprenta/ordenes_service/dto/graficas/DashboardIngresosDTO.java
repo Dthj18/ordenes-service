@@ -1,13 +1,13 @@
-package com.imprenta.ordenes_service.dto.reportes;
+package com.imprenta.ordenes_service.dto.graficas;
 
 import java.math.BigDecimal;
 import java.util.List;
 
-public class DashboardFinanzasDTO {
+public class DashboardIngresosDTO {
     private BigDecimal montoPagado;
-    private List<BarraGraficaDTO> datosGrafica;
+    private List<BarraIngresosDTO> datosGrafica;
 
-    public DashboardFinanzasDTO(BigDecimal montoPagado, List<BarraGraficaDTO> datosGrafica) {
+    public DashboardIngresosDTO(BigDecimal montoPagado, List<BarraIngresosDTO> datosGrafica) {
         this.montoPagado = montoPagado;
         this.datosGrafica = datosGrafica;
     }
@@ -20,11 +20,11 @@ public class DashboardFinanzasDTO {
         this.montoPagado = montoPagado;
     }
 
-    public List<BarraGraficaDTO> getDatosGrafica() {
+    public List<BarraIngresosDTO> getDatosGrafica() {
         return datosGrafica;
     }
 
-    public void setDatosGrafica(List<BarraGraficaDTO> datosGrafica) {
+    public void setDatosGrafica(List<BarraIngresosDTO> datosGrafica) {
         this.datosGrafica = datosGrafica;
     }
 

@@ -6,6 +6,7 @@ import com.imprenta.ordenes_service.dto.reportes.GraficaRadarDTO;
 import com.imprenta.ordenes_service.dto.reportes.OrdenCardDTO;
 import com.imprenta.ordenes_service.model.Orden;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -19,7 +20,6 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface OrdenRepository extends JpaRepository<Orden, Integer> {
 
-    // --- MÉTODOS JPA ESTÁNDAR ---
     Page<Orden> findByIdEstatusActualNotIn(List<Integer> estatusExcluidos, Pageable pageable);
 
     Page<Orden> findByIdEstatusActualIn(List<Integer> estatusIncluidos, Pageable pageable);
@@ -29,10 +29,7 @@ public interface OrdenRepository extends JpaRepository<Orden, Integer> {
             List<Integer> estatusExcluidos,
             Pageable pageable);
 
-    // Método auxiliar para listar cotizaciones en tu pantalla de lista
     List<Orden> findByIdEstatusActual(Integer idEstatusActual);
-
-    // --- CONSULTAS NATIVAS (REPORTES Y TARJETAS) ---
 
     @Query(value = """
             SELECT
@@ -50,6 +47,7 @@ public interface OrdenRepository extends JpaRepository<Orden, Integer> {
                 TO_CHAR(o.fecha_creacion, 'YYYY-MM-DD') as fechaIso,
                 u.nombre as nombreEncargado,
                 o.monto_total as montoTotal,
+                COALESCE(o.monto_pagado, 0) as montoPagado,
                 COALESCE(TO_CHAR(o.fecha_entrega_formal, 'DD Mon YYYY'), 'Por definir') as fechaEntrega,
                 (
                     SELECT json_agg(json_build_object(
@@ -71,9 +69,55 @@ public interface OrdenRepository extends JpaRepository<Orden, Integer> {
                 WHERE do3.id_orden = o.id_orden
                 LIMIT 1
             ) p_principal ON true
+            WHERE
+                (CAST(:fecha AS text) IS NULL OR TO_CHAR(o.fecha_creacion, 'YYYY-MM-DD') LIKE CONCAT(CAST(:fecha AS text), '%'))
+                AND (
+                    CAST(:estado AS text) IS NULL
+                    OR CAST(:estado AS text) = 'Todas'
+                    OR (CAST(:estado AS text) = 'Completadas' AND ce.id_estatus = 12)
+                    OR (CAST(:estado AS text) = 'Canceladas' AND ce.id_estatus = 11)
+                    OR (CAST(:estado AS text) = 'En curso' AND ce.id_estatus NOT IN (11, 12))
+                )
+                AND (
+                    CAST(:busqueda AS text) IS NULL
+                    OR CAST(o.id_orden AS text) ILIKE CONCAT('%', CAST(:busqueda AS text), '%')
+                    OR c.nombre ILIKE CONCAT('%', CAST(:busqueda AS text), '%')
+                    OR p_principal.descripcion ILIKE CONCAT('%', CAST(:busqueda AS text), '%')
+                )
             ORDER BY o.fecha_creacion DESC
+            """, countQuery = """
+            SELECT count(o.id_orden)
+            FROM ordenes o
+            JOIN clientes c ON o.id_cliente = c.id_cliente
+            JOIN cat_estatus ce ON o.id_estatus_actual = ce.id_estatus
+            LEFT JOIN LATERAL (
+                SELECT p.descripcion
+                FROM detalle_orden do3
+                JOIN productos p ON do3.id_producto = p.id_producto
+                WHERE do3.id_orden = o.id_orden
+                LIMIT 1
+            ) p_principal ON true
+            WHERE
+                (CAST(:fecha AS text) IS NULL OR TO_CHAR(o.fecha_creacion, 'YYYY-MM-DD') LIKE CONCAT(CAST(:fecha AS text), '%'))
+                AND (
+                    CAST(:estado AS text) IS NULL
+                    OR CAST(:estado AS text) = 'Todas'
+                    OR (CAST(:estado AS text) = 'Completadas' AND ce.id_estatus = 12)
+                    OR (CAST(:estado AS text) = 'Canceladas' AND ce.id_estatus = 11)
+                    OR (CAST(:estado AS text) = 'En curso' AND ce.id_estatus NOT IN (11, 12))
+                )
+                AND (
+                    CAST(:busqueda AS text) IS NULL
+                    OR CAST(o.id_orden AS text) ILIKE CONCAT('%', CAST(:busqueda AS text), '%')
+                    OR c.nombre ILIKE CONCAT('%', CAST(:busqueda AS text), '%')
+                    OR p_principal.descripcion ILIKE CONCAT('%', CAST(:busqueda AS text), '%')
+                )
             """, nativeQuery = true)
-    List<OrdenCardDTO> obtenerTarjetasMovil();
+    Page<OrdenCardDTO> obtenerTarjetasMovilDinamico(
+            @Param("busqueda") String busqueda,
+            @Param("estado") String estado,
+            @Param("fecha") String fecha,
+            Pageable pageable);
 
     @Query(value = """
             SELECT
@@ -92,7 +136,6 @@ public interface OrdenRepository extends JpaRepository<Orden, Integer> {
             """, nativeQuery = true)
     List<OrdenAsignadaDTO> obtenerOrdenesPorDisenador();
 
-    // CÓDIGO CORREGIDO AQUÍ (Estaba roto en tu ejemplo)
     @Query(value = """
             SELECT
                 CASE
@@ -143,6 +186,27 @@ public interface OrdenRepository extends JpaRepository<Orden, Integer> {
     @Query("SELECT COUNT(o) FROM Orden o WHERE (o.montoTotal > COALESCE(o.montoPagado, 0)) AND o.idEstatusActual NOT IN (1, 11)")
     Long contarPagosPendientes();
 
+    @Query("SELECT SUM(o.montoTotal - COALESCE(o.montoPagado, 0)) FROM Orden o WHERE (o.montoTotal > COALESCE(o.montoPagado, 0)) AND o.idEstatusActual NOT IN (1, 11)")
+    Double sumarDineroPendiente();
+
     @Query("SELECT o FROM Orden o WHERE o.fechaCreacion BETWEEN :inicio AND :fin AND o.idEstatusActual NOT IN (1, 11)")
     List<Orden> encontrarOrdenesParaFinanzas(@Param("inicio") LocalDateTime inicio, @Param("fin") LocalDateTime fin);
+
+    @Query("SELECT o From Orden o WHERE o.idEstatusActual = 1 AND o.fechaCreacion >= :inicio AND o.fechaCreacion <= :fin ORDER BY o.fechaCreacion DESC")
+    List<Orden> findCotizacionesPorRangoDeFechas(
+            @Param("inicio") LocalDateTime inicio,
+            @Param("fin") LocalDateTime fin);
+
+    @Query("SELECT COUNT(o) FROM Orden o WHERE o.fechaCreacion >= :inicio AND o.fechaCreacion <= :fin")
+    Long countOrdenesPorRango(@Param("inicio") LocalDateTime inicio, @Param("fin") LocalDateTime fin);
+
+    @Query("SELECT COALESCE(SUM(o.montoTotal), 0) FROM Orden o WHERE o.fechaCreacion >= :inicio AND o.fechaCreacion <= :fin")
+    BigDecimal sumMontoOrdenesPorRango(@Param("inicio") LocalDateTime inicio, @Param("fin") LocalDateTime fin);
+
+    @Query("SELECT o FROM Orden o WHERE o.idEstatusActual > 1 AND o.fechaCreacion >= :inicio AND o.fechaCreacion <= :fin ORDER BY o.fechaCreacion ASC")
+    List<Orden> findOrdenesPorRangoParaGrafica(@Param("inicio") LocalDateTime inicio, @Param("fin") LocalDateTime fin);
+
+    @Query("SELECT o FROM Orden o WHERE o.idEstatusActual = 1 AND o.fechaCreacion >= :inicio AND o.fechaCreacion <= :fin ORDER BY o.fechaCreacion ASC")
+    List<Orden> findCotizacionesPorRangoParaGrafica(@Param("inicio") LocalDateTime inicio,
+            @Param("fin") LocalDateTime fin);
 }

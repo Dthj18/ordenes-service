@@ -12,47 +12,26 @@ public class DetalleSolicitud {
     @Column(name = "id_detalle")
     private Integer idDetalle;
 
-    @Column(name = "id_insumo")
-    private Integer idInsumo;
-
-    @Column(name = "descripcion_personalizada")
-    private String descripcionPersonalizada;
+    @Column(name = "id_producto")
+    private Integer idProducto;
 
     @Column(name = "cantidad", nullable = false)
     private Integer cantidad;
 
-    // --- Relación inversa hacia el Padre ---
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_solicitud") // FK en la base de datos
-    @JsonIgnore // Importante para evitar errores al convertir a JSON
+    @JoinColumn(name = "id_solicitud")
+    @JsonIgnore
     private SolicitudInsumo solicitud;
 
     public DetalleSolicitud() {
     }
 
-    // Getters y Setters
     public Integer getIdDetalle() {
         return idDetalle;
     }
 
     public void setIdDetalle(Integer idDetalle) {
         this.idDetalle = idDetalle;
-    }
-
-    public Integer getIdInsumo() {
-        return idInsumo;
-    }
-
-    public void setIdInsumo(Integer idInsumo) {
-        this.idInsumo = idInsumo;
-    }
-
-    public String getDescripcionPersonalizada() {
-        return descripcionPersonalizada;
-    }
-
-    public void setDescripcionPersonalizada(String descripcionPersonalizada) {
-        this.descripcionPersonalizada = descripcionPersonalizada;
     }
 
     public Integer getCantidad() {
@@ -69,5 +48,13 @@ public class DetalleSolicitud {
 
     public void setSolicitud(SolicitudInsumo solicitud) {
         this.solicitud = solicitud;
+    }
+
+    public Integer getIdProducto() {
+        return idProducto;
+    }
+
+    public void setIdProducto(Integer idProducto) {
+        this.idProducto = idProducto;
     }
 }

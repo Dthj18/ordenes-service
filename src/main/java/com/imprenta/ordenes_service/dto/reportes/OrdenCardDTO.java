@@ -21,6 +21,8 @@ public interface OrdenCardDTO {
 
     BigDecimal getMontoTotal();
 
+    BigDecimal getMontoPagado();
+
     String getFechaEntrega();
 
     String getDescripcionEstatus();

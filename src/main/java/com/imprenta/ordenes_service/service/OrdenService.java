@@ -1,7 +1,10 @@
 package com.imprenta.ordenes_service.service;
 
 import java.math.BigDecimal;
+import java.time.DayOfWeek;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.temporal.TemporalAdjusters;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -9,12 +12,14 @@ import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.imprenta.ordenes_service.dto.CrearOrdenDTO;
 import com.imprenta.ordenes_service.dto.reportes.OrdenCardDTO;
+import com.imprenta.ordenes_service.dto.reportes.OrdenesTotalesDTO;
 import com.imprenta.ordenes_service.exception.BadRequestException;
 import com.imprenta.ordenes_service.exception.ResourceNotFoundException;
 import com.imprenta.ordenes_service.helpers.CotizacionHelper;
@@ -61,6 +66,7 @@ public class OrdenService {
         this.ordenRepository = ordenRepository;
         this.cotizacionHelper = cotizacionHelper;
         this.trazabilidadHelper = trazabilidadHelper;
+
         this.movimientosHelper = movimientosHelper;
         this.stateFactory = stateFactory;
         this.fileStorageHelper = fileStorageHelper;
@@ -103,10 +109,6 @@ public class OrdenService {
     public Page<Orden> obtenerCotizacionesYCanceladas(Pageable pageable) {
         return ordenRepository.findByIdEstatusActualIn(IDS_NO_ORDENES, pageable);
     }
-
-    // public List<Orden> findAll() {
-    // return ordenRepository.findAll();
-    // }
 
     public Orden findById(Integer id) {
         return ordenRepository.findById(id)
@@ -185,8 +187,14 @@ public class OrdenService {
         return trazabilidadHelper.registrarCambioPorId(idOrden, ID_ESTATUS_CANCELADA, idUsuario);
     }
 
-    public List<OrdenCardDTO> obtenerTarjetasMovil() {
-        return ordenRepository.obtenerTarjetasMovil();
+    public Page<OrdenCardDTO> obtenerTarjetasMovil(String busqueda, String estado, String fecha, int page, int size) {
+        String busquedaLimpia = (busqueda != null && !busqueda.trim().isEmpty()) ? busqueda.trim() : null;
+        String estadoLimpio = (estado != null && !estado.trim().isEmpty()) ? estado.trim() : null;
+        String fechaLimpia = (fecha != null && !fecha.trim().isEmpty()) ? fecha.trim() : null;
+
+        Pageable pageable = PageRequest.of(page, size);
+
+        return ordenRepository.obtenerTarjetasMovilDinamico(busquedaLimpia, estadoLimpio, fechaLimpia, pageable);
     }
 
     public List<HistorialOrdenDTO> obtenerHistorialOrden(Integer idOrden) {
@@ -217,6 +225,80 @@ public class OrdenService {
 
         orden.setNotasDiseno(nuevasNotas);
         return ordenRepository.save(orden);
+    }
+
+    public List<Orden> obtenerCotizacionesFiltradas(String filtro) {
+        LocalDateTime ahora = LocalDateTime.now();
+        LocalDateTime inicio;
+        LocalDateTime fin;
+
+        LocalTime inicioDia = LocalTime.of(0, 0, 0);
+        LocalTime finDia = LocalTime.of(23, 59, 59);
+
+        switch (filtro.toLowerCase()) {
+            case "dia":
+            case "hoy":
+                inicio = ahora.with(inicioDia);
+                fin = ahora.with(finDia);
+                break;
+
+            case "semana":
+                inicio = ahora.with(DayOfWeek.MONDAY).with(inicioDia);
+                fin = ahora.with(DayOfWeek.SUNDAY).with(finDia);
+                break;
+
+            case "año":
+            case "ano":
+                inicio = ahora.withDayOfYear(1).with(inicioDia);
+                fin = ahora.with(TemporalAdjusters.lastDayOfYear()).with(finDia);
+                break;
+
+            case "mes":
+            default:
+                inicio = ahora.withDayOfMonth(1).with(inicioDia);
+                fin = ahora.with(TemporalAdjusters.lastDayOfMonth()).with(finDia);
+                break;
+        }
+
+        return ordenRepository.findCotizacionesPorRangoDeFechas(inicio, fin);
+    }
+
+    public OrdenesTotalesDTO obtenerOrdenesPorPeriodo(String filtroTiempo) {
+        LocalDateTime ahora = LocalDateTime.now();
+        LocalTime inicioDia = LocalTime.of(0, 0, 0);
+        LocalTime finDia = LocalTime.of(23, 59, 59);
+
+        LocalDateTime inicio;
+        LocalDateTime fin;
+
+        switch (filtroTiempo.toLowerCase()) {
+            case "hoy":
+            case "dia":
+                inicio = ahora.with(inicioDia);
+                fin = ahora.with(finDia);
+                break;
+            case "semana":
+                inicio = ahora.with(java.time.DayOfWeek.MONDAY).with(inicioDia);
+                fin = ahora.with(java.time.DayOfWeek.SUNDAY).with(finDia);
+                break;
+            case "mes":
+                inicio = ahora.withDayOfMonth(1).with(inicioDia);
+                fin = ahora.with(java.time.temporal.TemporalAdjusters.lastDayOfMonth()).with(finDia);
+                break;
+            case "año":
+            case "anio":
+                inicio = ahora.withDayOfYear(1).with(inicioDia);
+                fin = ahora.with(java.time.temporal.TemporalAdjusters.lastDayOfYear()).with(finDia);
+                break;
+            default:
+                inicio = ahora.withDayOfMonth(1).with(inicioDia);
+                fin = ahora.with(java.time.temporal.TemporalAdjusters.lastDayOfMonth()).with(finDia);
+                break;
+        }
+        Long conteo = ordenRepository.countOrdenesPorRango(inicio, fin);
+        BigDecimal sumaDinero = ordenRepository.sumMontoOrdenesPorRango(inicio, fin);
+
+        return new OrdenesTotalesDTO(filtroTiempo, conteo, sumaDinero);
     }
 
 }

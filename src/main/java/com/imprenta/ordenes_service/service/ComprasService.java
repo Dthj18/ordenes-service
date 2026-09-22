@@ -4,7 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import org.hibernate.Hibernate; // 2. IMPORTA ESTO
+import org.hibernate.Hibernate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -18,7 +18,7 @@ import com.imprenta.ordenes_service.model.SolicitudInsumo;
 import com.imprenta.ordenes_service.repository.MovimientoRepository;
 import com.imprenta.ordenes_service.repository.SolicitudInsumoRepository;
 
-import org.springframework.transaction.annotation.Transactional; // <--- OJO: Importa este, NO el de jakarta
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class ComprasService {
@@ -39,6 +39,7 @@ public class ComprasService {
         this.solicitudInsumoRepository = solicitudInsumoRepository;
         this.movimientoRepository = movimientoRepository;
         this.securityHelper = securityHelper;
+
     }
 
     @Transactional
@@ -50,12 +51,13 @@ public class ComprasService {
         solicitudPadre.setIdEstatus(ESTATUS_PENDIENTE);
         solicitudPadre.setFechaCreacion(LocalDateTime.now());
 
+        solicitudPadre.setDescripcionSolicitud(dto.getDescripcionGeneral());
+
         if (dto.getProductos() != null) {
             for (ProductoSolicitudDTO prod : dto.getProductos()) {
 
                 DetalleSolicitud detalle = new DetalleSolicitud();
-
-                detalle.setDescripcionPersonalizada(prod.getDescripcion());
+                detalle.setIdProducto(prod.getIdProducto());
 
                 try {
                     int cant = Integer.parseInt(prod.getCantidad());
@@ -68,7 +70,9 @@ public class ComprasService {
             }
         }
 
-        return solicitudInsumoRepository.save(solicitudPadre);
+        SolicitudInsumo solicitudGuardada = solicitudInsumoRepository.save(solicitudPadre);
+
+        return solicitudGuardada;
     }
 
     @Transactional
@@ -77,37 +81,33 @@ public class ComprasService {
         securityHelper.validarPermiso(idUsuarioAdmin, SecurityHelper.ROL_ADMIN, SecurityHelper.ROL_DUENO,
                 SecurityHelper.ROL_CONTADORA);
 
-        // 1. Buscamos la solicitud (Esto trae al Padre y su lista de Detalles)
         SolicitudInsumo solicitud = solicitudInsumoRepository.findById(idSolicitud)
                 .orElseThrow(() -> new ResourceNotFoundException("Solicitud no encontrada"));
 
         solicitud.setIdEstatus(ESTATUS_COMPRADA);
         solicitudInsumoRepository.save(solicitud);
 
-        // --- LÓGICA NUEVA PARA EL CONCEPTO ---
-        // Construimos un resumen de qué se compró uniendo los detalles
-        StringBuilder conceptoBuilder = new StringBuilder("Compra Solicitud #" + solicitud.getIdSolicitud() + ": ");
+        StringBuilder conceptoBuilder = new StringBuilder();
+        conceptoBuilder.append("Compra Sol #").append(solicitud.getIdSolicitud());
 
-        if (solicitud.getDetalles() != null && !solicitud.getDetalles().isEmpty()) {
-            // Recorremos la lista de hijos
-            for (DetalleSolicitud det : solicitud.getDetalles()) {
-                conceptoBuilder.append(det.getDescripcionPersonalizada())
-                        .append(" (x").append(det.getCantidad()).append("), ");
-            }
+        if (solicitud.getDescripcionSolicitud() != null && !solicitud.getDescripcionSolicitud().isEmpty()) {
+            conceptoBuilder.append(": ").append(solicitud.getDescripcionSolicitud());
+        } else {
+            conceptoBuilder.append(": Compra de insumos varios");
         }
 
-        // Limpiamos el string y aseguramos que no exceda 255 caracteres (límite común
-        // en BD)
+        int cantidadItems = (solicitud.getDetalles() != null) ? solicitud.getDetalles().size() : 0;
+        conceptoBuilder.append(" (").append(cantidadItems).append(" items)");
+
         String conceptoFinal = conceptoBuilder.toString();
         if (conceptoFinal.length() > 250) {
             conceptoFinal = conceptoFinal.substring(0, 247) + "...";
         }
-        // --------------------------------------
 
         Movimientos egreso = new Movimientos();
         egreso.setIdTipoMovimiento(TIPO_EGRESO);
         egreso.setMonto(costoReal.abs().negate());
-        egreso.setConcepto(conceptoFinal); // Usamos el texto generado arriba
+        egreso.setConcepto(conceptoFinal);
         egreso.setFechaMovimiento(LocalDateTime.now());
         egreso.setIdUsuarioRegistro(idUsuarioAdmin);
         egreso.setIdOrden(solicitud.getIdOrden());
@@ -115,14 +115,10 @@ public class ComprasService {
         return movimientoRepository.save(egreso);
     }
 
-    @Transactional(readOnly = true) // Mantenemos esto por seguridad
+    @Transactional(readOnly = true)
     public List<SolicitudInsumo> obtenerPendientes() {
-        // 1. Buscamos los padres
         List<SolicitudInsumo> lista = solicitudInsumoRepository.findByIdEstatus(ESTATUS_PENDIENTE);
 
-        // 2. FORZAMOS la carga de los hijos
-        // Recorremos cada solicitud y "tocamos" la lista de detalles para que se
-        // descargue
         for (SolicitudInsumo solicitud : lista) {
             Hibernate.initialize(solicitud.getDetalles());
         }

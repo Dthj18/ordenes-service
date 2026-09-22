@@ -3,7 +3,7 @@ package com.imprenta.ordenes_service.model;
 import jakarta.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.time.LocalDateTime; 
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "Solicitudes_Insumos")
@@ -25,6 +25,9 @@ public class SolicitudInsumo {
 
     @Column(name = "fecha_creacion")
     private LocalDateTime fechaCreacion;
+
+    @Column(name = "descripcion_solicitud")
+    private String descripcionSolicitud;
 
     @OneToMany(mappedBy = "solicitud", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<DetalleSolicitud> detalles;
@@ -87,5 +90,13 @@ public class SolicitudInsumo {
 
     public void setDetalles(List<DetalleSolicitud> detalles) {
         this.detalles = detalles;
+    }
+
+    public String getDescripcionSolicitud() {
+        return descripcionSolicitud;
+    }
+
+    public void setDescripcionSolicitud(String descripcionSolicitud) {
+        this.descripcionSolicitud = descripcionSolicitud;
     }
 }

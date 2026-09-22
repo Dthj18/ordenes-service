@@ -12,6 +12,9 @@ public class Producto {
     @Column(name = "id_producto")
     private Integer idProducto;
 
+    @Column(name = "nombre", nullable = false, length = 255)
+    private String nombre;
+
     @Column(name = "descripcion", nullable = false, length = 255)
     private String descripcion;
 
@@ -39,11 +42,8 @@ public class Producto {
     @Column(name = "volumen_descuento_cantidad")
     private Integer volumenDescuentoCantidad;
 
-    // --- Constructor Vacío (Obligatorio JPA) ---
     public Producto() {
     }
-
-    // --- Getters y Setters ---
 
     public Integer getIdProducto() {
         return idProducto;
@@ -124,4 +124,13 @@ public class Producto {
     public void setVolumenDescuentoCantidad(Integer volumenDescuentoCantidad) {
         this.volumenDescuentoCantidad = volumenDescuentoCantidad;
     }
+
+    public String getNombre() {
+        return nombre;
+    }
+
+    public void setNombre(String nombre) {
+        this.nombre = nombre;
+    }
+
 }

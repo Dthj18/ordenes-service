@@ -4,11 +4,13 @@ public class DashboardResumenDTO {
     private Long cotizacionesMes;
     private Long ordenesActivas;
     private Long pagosPendientes;
+    private Double pagoTotal;
 
-    public DashboardResumenDTO(Long cotizacionesMes, Long ordenesActivas, Long pagosPendientes) {
+    public DashboardResumenDTO(Long cotizacionesMes, Long ordenesActivas, Long pagosPendientes, Double pagoTotal) {
         this.cotizacionesMes = cotizacionesMes;
         this.ordenesActivas = ordenesActivas;
         this.pagosPendientes = pagosPendientes;
+        this.pagoTotal = pagoTotal;
     }
 
     public Long getCotizacionesMes() {
@@ -33,6 +35,14 @@ public class DashboardResumenDTO {
 
     public void setPagosPendientes(Long pagosPendientes) {
         this.pagosPendientes = pagosPendientes;
+    }
+
+    public Double getPagoTotal() {
+        return pagoTotal;
+    }
+
+    public void setPagoTotal(Double pagoTotal) {
+        this.pagoTotal = pagoTotal;
     }
 
 }

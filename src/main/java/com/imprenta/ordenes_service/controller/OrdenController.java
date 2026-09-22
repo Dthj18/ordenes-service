@@ -28,6 +28,7 @@ import com.imprenta.ordenes_service.dto.CrearOrdenDTO;
 import com.imprenta.ordenes_service.dto.NotasDisenoDTO;
 import com.imprenta.ordenes_service.dto.reportes.HistorialOrdenDTO;
 import com.imprenta.ordenes_service.dto.reportes.OrdenCardDTO;
+import com.imprenta.ordenes_service.dto.reportes.OrdenesTotalesDTO;
 import com.imprenta.ordenes_service.exception.BadRequestException;
 import com.imprenta.ordenes_service.model.Movimientos;
 import com.imprenta.ordenes_service.model.Orden;
@@ -197,8 +198,14 @@ public class OrdenController {
     }
 
     @GetMapping("/movil/tarjetas")
-    public ResponseEntity<List<OrdenCardDTO>> obtenerTarjetasParaMovil() {
-        return ResponseEntity.ok(ordenService.obtenerTarjetasMovil());
+    public ResponseEntity<Page<OrdenCardDTO>> obtenerTarjetasParaMovil(
+            @RequestParam(required = false) String busqueda,
+            @RequestParam(required = false) String estado,
+            @RequestParam(required = false) String fecha,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+
+        return ResponseEntity.ok(ordenService.obtenerTarjetasMovil(busqueda, estado, fecha, page, size));
     }
 
     @GetMapping("/{idOrden}/historial")
@@ -228,4 +235,19 @@ public class OrdenController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error al actualizar notas");
         }
     }
+
+    @GetMapping("/cotizaciones")
+    public ResponseEntity<List<Orden>> obtenerCotizacionesTotales(
+            @RequestParam(defaultValue = "Mes") String filtro) {
+        List<Orden> cotizaciones = ordenService.obtenerCotizacionesFiltradas(filtro);
+        return ResponseEntity.ok(cotizaciones);
+    }
+
+    @GetMapping("/estadisticas")
+    public ResponseEntity<OrdenesTotalesDTO> obtenerOrdenesTotales(
+            @RequestParam(defaultValue = "Mes") String filtro) {
+        OrdenesTotalesDTO stats = ordenService.obtenerOrdenesPorPeriodo(filtro);
+        return ResponseEntity.ok(stats);
+    }
+
 }
