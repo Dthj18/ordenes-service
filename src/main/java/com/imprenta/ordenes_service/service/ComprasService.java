@@ -26,6 +26,7 @@ public class ComprasService {
     private final SolicitudInsumoRepository solicitudInsumoRepository;
     private final MovimientoRepository movimientoRepository;
     private final SecurityHelper securityHelper;
+    private final NotificationService notificationService;
 
     private static final Integer ESTATUS_PENDIENTE = 1;
     private static final Integer ESTATUS_COMPRADA = 2;
@@ -35,10 +36,12 @@ public class ComprasService {
     @Autowired
     public ComprasService(SolicitudInsumoRepository solicitudInsumoRepository,
             MovimientoRepository movimientoRepository,
-            SecurityHelper securityHelper) {
+            SecurityHelper securityHelper,
+            NotificationService notificationService) {
         this.solicitudInsumoRepository = solicitudInsumoRepository;
         this.movimientoRepository = movimientoRepository;
         this.securityHelper = securityHelper;
+        this.notificationService = notificationService;
 
     }
 
@@ -71,6 +74,20 @@ public class ComprasService {
         }
 
         SolicitudInsumo solicitudGuardada = solicitudInsumoRepository.save(solicitudPadre);
+
+        String mensajeNotificacion = "Se ha generado una nueva solicitud de insumos";
+        if (dto.getIdOrden() != null) {
+            mensajeNotificacion += " para la orden #" + dto.getIdOrden() + ".";
+        } else {
+            mensajeNotificacion += ".";
+        }
+
+        notificationService.notificarARoles(
+                String.valueOf(dto.getIdUsuario()),
+                List.of("CONTADORA", "DUEÑO"),
+                "SOLICITUD_INSUMOS",
+                "Nueva solicitud de insumos",
+                mensajeNotificacion);
 
         return solicitudGuardada;
     }

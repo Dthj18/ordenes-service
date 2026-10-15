@@ -17,15 +17,12 @@ public class NotificacionesController {
         this.notificationService = notificationService;
     }
 
-    // Endpoint para que el frontend consulte las notificaciones no leídas al
-    // iniciar sesión
     @GetMapping("/pendientes")
-    public ResponseEntity<List<Notificacion>> obtenerPendientes(@RequestParam String receptorId) {
+    public ResponseEntity<List<Notificacion>> obtenerPendientes(@RequestHeader("X-User-Id") String receptorId) {
         List<Notificacion> pendientes = notificationService.obtenerPendientes(receptorId);
         return ResponseEntity.ok(pendientes);
     }
 
-    // Endpoint para que el frontend marque una notificación como leída
     @PatchMapping("/{id}/leer")
     public ResponseEntity<Void> marcarLeida(@PathVariable Long id) {
         notificationService.marcarComoLeida(id);

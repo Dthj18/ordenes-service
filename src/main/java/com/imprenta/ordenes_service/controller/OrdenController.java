@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -64,11 +65,11 @@ public class OrdenController {
     @PostMapping("/{idOrden}/pagos")
     public ResponseEntity<Movimientos> registrarMovimiento(
             @PathVariable Integer idOrden,
+            @RequestHeader("X-User-Id") Integer idUsuario,
             @RequestBody Map<String, Object> body) {
 
         BigDecimal monto = new BigDecimal(body.get("monto").toString());
         String referencia = (String) body.get("referencia");
-        Integer idUsuario = (Integer) body.get(("idUsuario"));
 
         Movimientos nuevoMovimiento = ordenService.registrarMovimiento(idOrden, monto, referencia, idUsuario);
 
@@ -87,12 +88,13 @@ public class OrdenController {
     @PostMapping("/{idOrden}/estatus")
     public ResponseEntity<Trazabilidad> cambiarEstatusDeOrden(
             @PathVariable Integer idOrden,
+            @RequestHeader("X-User-Id") Integer idUsuario,
             @RequestBody CambiarEstatusDTO dto) {
 
         Trazabilidad nuevaTraza = ordenService.cambiarEstatusOrden(
                 idOrden,
                 dto.getClaveEstatus(),
-                dto.getIdUsuario());
+                idUsuario);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(nuevaTraza);
 
@@ -142,9 +144,8 @@ public class OrdenController {
     @PostMapping("/{idOrden}/avanzar")
     public ResponseEntity<Trazabilidad> avanzarFlujo(
             @PathVariable Integer idOrden,
+            @RequestHeader("X-User-Id") Integer idUsuario,
             @RequestBody Map<String, Object> body) {
-
-        Integer idUsuario = (Integer) body.get("idUsuario");
 
         Trazabilidad traza = ordenService.avanzarEstado(idOrden, idUsuario, body);
 
@@ -183,9 +184,9 @@ public class OrdenController {
     @PostMapping("/{idOrden}/cancelar")
     public ResponseEntity<Trazabilidad> cancelarOrden(
             @PathVariable Integer idOrden,
+            @RequestHeader("X-User-Id") Integer idUsuario,
             @RequestBody Map<String, Integer> body) {
 
-        Integer idUsuario = body.get("idUsuario");
         Integer idRazon = body.get("idRazon");
 
         if (idRazon == null) {

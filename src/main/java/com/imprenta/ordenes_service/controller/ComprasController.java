@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -29,11 +30,15 @@ public class ComprasController {
     }
 
     @PostMapping("/solicitar")
-    public ResponseEntity<?> crearSolicitud(@RequestBody CrearSolicitudDTO dto) {
+    public ResponseEntity<?> crearSolicitud(
+            @RequestHeader("X-User-Id") Integer idUsuario,
+            @RequestBody CrearSolicitudDTO dto) {
         try {
             if (dto.getProductos() == null || dto.getProductos().isEmpty()) {
                 return ResponseEntity.badRequest().body("La lista de productos no puede estar vacía");
             }
+
+            dto.setIdUsuario(idUsuario); // sobreescribe cualquier valor que venga en el body con el del token
 
             SolicitudInsumo solicitudGuardada = comprasService.crearSolicitud(dto);
 

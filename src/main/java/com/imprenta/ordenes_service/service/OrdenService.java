@@ -49,6 +49,7 @@ public class OrdenService {
     private final FileStorageHelper fileStorageHelper;
     private final SecurityHelper securityHelper;
     private final CatEstatusRepository catEstatusRepository;
+    private final NotificationService notificationService;
 
     private static final String ESTATUS_INICIAL = "COT_INICIADA";
     private static final Integer ID_ESTATUS_CANCELADA = 11;
@@ -62,16 +63,17 @@ public class OrdenService {
             OrdenStateFactory stateFactory,
             FileStorageHelper fileStorageHelper,
             SecurityHelper securityHelper,
-            CatEstatusRepository catEstatusRepository) {
+            CatEstatusRepository catEstatusRepository,
+            NotificationService notificationService) {
         this.ordenRepository = ordenRepository;
         this.cotizacionHelper = cotizacionHelper;
         this.trazabilidadHelper = trazabilidadHelper;
-
         this.movimientosHelper = movimientosHelper;
         this.stateFactory = stateFactory;
         this.fileStorageHelper = fileStorageHelper;
         this.securityHelper = securityHelper;
         this.catEstatusRepository = catEstatusRepository;
+        this.notificationService = notificationService;
     }
 
     @Transactional
@@ -89,12 +91,24 @@ public class OrdenService {
 
     @Transactional
     public Movimientos registrarMovimiento(Integer idOrden, BigDecimal monto, String referencia, Integer idUsuario) {
-        return movimientosHelper.registrarAbono(idOrden, monto, referencia, idUsuario);
+        Movimientos movimiento = movimientosHelper.registrarAbono(idOrden, monto, referencia, idUsuario);
+
+        notificationService.notificarARoles(
+                String.valueOf(idUsuario),
+                List.of("CONTADORA", "JEFE DE TALLER", "DISEÑADOR", "DUEÑO"),
+                "COTIZACION_PAGADA",
+                "Cotización Pagada - Orden #" + idOrden,
+                "Se registró un pago de $" + monto + " para la orden #" + idOrden + ".");
+
+        return movimiento;
     }
 
     @Transactional
     public Trazabilidad cambiarEstatusOrden(Integer idOrden, String nuevaClaveEstatus, Integer idUsuario) {
-        return trazabilidadHelper.registrarCambio(idOrden, nuevaClaveEstatus, idUsuario);
+        Trazabilidad resultado = trazabilidadHelper.registrarCambio(idOrden, nuevaClaveEstatus, idUsuario);
+        Orden ordenActualizada = findById(idOrden);
+        notificarCambioDeEstatus(idOrden, idUsuario, ordenActualizada.getIdEstatusActual());
+        return resultado;
     }
 
     @Transactional
@@ -121,7 +135,29 @@ public class OrdenService {
         OrdenState estadoActual = stateFactory.obtenerEstado(orden.getIdEstatusActual());
         Integer idSiguientePaso = estadoActual.procesarSiguientePaso(orden, idUsuario, params);
 
-        return trazabilidadHelper.registrarCambioPorId(idOrden, idSiguientePaso, idUsuario);
+        Trazabilidad resultado = trazabilidadHelper.registrarCambioPorId(idOrden, idSiguientePaso, idUsuario);
+        notificarCambioDeEstatus(idOrden, idUsuario, idSiguientePaso);
+        return resultado;
+    }
+
+    private void notificarCambioDeEstatus(Integer idOrden, Integer idUsuario, Integer idEstatusDestino) {
+        if (idEstatusDestino == 9) {
+            notificationService.notificarARoles(
+                    String.valueOf(idUsuario),
+                    List.of("JEFE DE TALLER"),
+                    "ORDEN_IMPRESION",
+                    "Orden lista para impresión",
+                    "La orden #" + idOrden + " ha sido aprobada y pasó a la cola de impresión.");
+        }
+
+        else if (idEstatusDestino == 6) {
+            notificationService.notificarARoles(
+                    String.valueOf(idUsuario),
+                    List.of("CONTADORA", "DUEÑO", "MOSTRADOR"),
+                    "ORDEN_ENTREGADA",
+                    "Orden lista para entrega",
+                    "La orden #" + idOrden + " ha sido terminada en taller y está lista para entregarse.");
+        }
     }
 
     @Transactional
@@ -147,7 +183,9 @@ public class OrdenService {
                 .orElseThrow(() -> new ResourceNotFoundException("Orden no encontrada con ID: " + idOrden));
 
         orden.setIdUsuarioDisenador(idUsuarioDisenador);
-        return ordenRepository.save(orden);
+        Orden ordenActualizada = ordenRepository.save(orden);
+
+        return ordenActualizada;
     }
 
     @Transactional
@@ -160,7 +198,9 @@ public class OrdenService {
         orden.setRutaArchivo(nombreArchivo);
         orden.setFechaSubida(LocalDateTime.now());
 
-        return ordenRepository.save(orden);
+        Orden ordenActualizada = ordenRepository.save(orden);
+
+        return ordenActualizada;
     }
 
     @Transactional
@@ -184,7 +224,16 @@ public class OrdenService {
             throw new BadRequestException("No se puede cancelar una orden finalizada o ya cancelada.");
         }
         orden.setIdRazonCancelacion(idRazon);
-        return trazabilidadHelper.registrarCambioPorId(idOrden, ID_ESTATUS_CANCELADA, idUsuario);
+        Trazabilidad resultado = trazabilidadHelper.registrarCambioPorId(idOrden, ID_ESTATUS_CANCELADA, idUsuario);
+
+        notificationService.notificarARoles(
+                String.valueOf(idUsuario),
+                List.of("JEFE DE TALLER", "DISEÑADOR", "CONTADORA", "DUEÑO"),
+                "ORDEN_CANCELADA",
+                "Alerta: Orden Cancelada",
+                "La orden #" + idOrden + " acaba de ser cancelada en el sistema.");
+
+        return resultado;
     }
 
     public Page<OrdenCardDTO> obtenerTarjetasMovil(String busqueda, String estado, String fecha, int page, int size) {
