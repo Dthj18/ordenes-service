@@ -74,6 +74,9 @@ public class Orden {
     @Column(name = "notas_diseno", columnDefinition = "TEXT")
     private String notasDiseno;
 
+    @Column(name = "fecha_vencimiento")
+    private LocalDateTime fechaVencimiento;
+
     @OneToMany(mappedBy = "orden", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     @JsonManagedReference
     private List<DetalleOrden> detalles;
@@ -229,6 +232,14 @@ public class Orden {
                 detalle.setOrden(this);
             }
         }
+    }
+
+    public LocalDateTime getFechaVencimiento() {
+        return fechaVencimiento;
+    }
+
+    public void setFechaVencimiento(LocalDateTime fechaVencimiento) {
+        this.fechaVencimiento = fechaVencimiento;
     }
 
 }

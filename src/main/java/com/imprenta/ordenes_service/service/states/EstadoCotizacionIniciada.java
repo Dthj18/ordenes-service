@@ -3,11 +3,9 @@ package com.imprenta.ordenes_service.service.states;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Map;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.imprenta.ordenes_service.exception.BadRequestException;
-import com.imprenta.ordenes_service.helpers.MovimientosHelper;
 import com.imprenta.ordenes_service.helpers.SecurityHelper;
 import com.imprenta.ordenes_service.model.Orden;
 
@@ -16,13 +14,11 @@ public class EstadoCotizacionIniciada implements OrdenState {
 
     private static final Integer ID_ESTATUS_INICIADA = 1;
     private static final Integer ID_SIGUIENTE_PASO = 2;
+    private static final Integer ID_CONDICION_CREDITO = 5;
 
-    private final MovimientosHelper movimientosHelper;
     private final SecurityHelper securityHelper;
 
-    @Autowired
-    public EstadoCotizacionIniciada(MovimientosHelper movimientosHelper, SecurityHelper securityHelper) {
-        this.movimientosHelper = movimientosHelper;
+    public EstadoCotizacionIniciada(SecurityHelper securityHelper) {
         this.securityHelper = securityHelper;
     }
 
@@ -39,12 +35,27 @@ public class EstadoCotizacionIniciada implements OrdenState {
                 SecurityHelper.ROL_CONTADORA,
                 SecurityHelper.ROL_MOSTRADOR);
 
-        if (!movimientosHelper.cubreRequisitoMinimo(orden)) {
-            BigDecimal minimo = movimientosHelper.calcularPagoMinimoRequerido(orden);
+        if (orden.getIdCondicionPago() != null && !orden.getIdCondicionPago().equals(ID_CONDICION_CREDITO)) {
+            BigDecimal porcentajeAnticipo;
+
+            if (orden.getIdCondicionPago() == 1) {
+                porcentajeAnticipo = new BigDecimal("1.00");
+            } else if (orden.getIdCondicionPago() == 3) {
+                porcentajeAnticipo = new BigDecimal("0.50");
+            } else {
+                throw new BadRequestException(
+                        "Condición de pago no válida. Las opciones permitidas son Crédito, Pago Único o Anticipo del 50%.");
+            }
+
+            BigDecimal minimoRequerido = orden.getMontoTotal().multiply(porcentajeAnticipo);
             BigDecimal pagado = orden.getMontoPagado() == null ? BigDecimal.ZERO : orden.getMontoPagado();
 
-            throw new BadRequestException(
-                    String.format("Falta pago. Pagado: $%s. Mínimo requerido: $%s", pagado, minimo));
+            if (pagado.compareTo(minimoRequerido) < 0) {
+                throw new BadRequestException(
+                        String.format("Falta anticipo para iniciar la orden. Pagado: $%s. Mínimo requerido: $%s",
+                                pagado, minimoRequerido));
+            }
+
         }
 
         int dias = orden.getPlazoEstimadoDias() == null ? 0 : orden.getPlazoEstimadoDias();

@@ -42,7 +42,6 @@ public class OrdenController {
 
     private final OrdenService ordenService;
 
-    @Autowired
     public OrdenController(OrdenService ordenService) {
         this.ordenService = ordenService;
     }

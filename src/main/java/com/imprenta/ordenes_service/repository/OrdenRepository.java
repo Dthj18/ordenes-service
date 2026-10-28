@@ -209,4 +209,7 @@ public interface OrdenRepository extends JpaRepository<Orden, Integer> {
     @Query("SELECT o FROM Orden o WHERE o.idEstatusActual = 1 AND o.fechaCreacion >= :inicio AND o.fechaCreacion <= :fin ORDER BY o.fechaCreacion ASC")
     List<Orden> findCotizacionesPorRangoParaGrafica(@Param("inicio") LocalDateTime inicio,
             @Param("fin") LocalDateTime fin);
+
+    @Query("SELECT COALESCE(SUM(o.montoTotal - COALESCE(o.montoPagado, 0)), 0) FROM Orden o WHERE o.idCliente = :idCliente AND o.idCondicionPago = 5 AND o.idEstatusActual != 99")
+    BigDecimal calcularSaldoDeudor(@Param("idCliente") Integer idCliente);
 }

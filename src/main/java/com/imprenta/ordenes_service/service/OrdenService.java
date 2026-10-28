@@ -10,13 +10,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.imprenta.ordenes_service.client.PersonasClient;
+import com.imprenta.ordenes_service.dto.ClienteDTO;
 import com.imprenta.ordenes_service.dto.CrearOrdenDTO;
 import com.imprenta.ordenes_service.dto.reportes.OrdenCardDTO;
 import com.imprenta.ordenes_service.dto.reportes.OrdenesTotalesDTO;
@@ -50,12 +51,13 @@ public class OrdenService {
     private final SecurityHelper securityHelper;
     private final CatEstatusRepository catEstatusRepository;
     private final NotificationService notificationService;
+    private final PersonasClient personasClient;
 
     private static final String ESTATUS_INICIAL = "COT_INICIADA";
     private static final Integer ID_ESTATUS_CANCELADA = 11;
+    private static final Integer ID_CONDICION_CREDITO = 5;
     private final List<Integer> IDS_NO_ORDENES = Arrays.asList(1, 11);
 
-    @Autowired
     public OrdenService(OrdenRepository ordenRepository,
             CotizacionHelper cotizacionHelper,
             TrazabilidadHelper trazabilidadHelper,
@@ -64,7 +66,8 @@ public class OrdenService {
             FileStorageHelper fileStorageHelper,
             SecurityHelper securityHelper,
             CatEstatusRepository catEstatusRepository,
-            NotificationService notificationService) {
+            NotificationService notificationService,
+            PersonasClient personasClient) {
         this.ordenRepository = ordenRepository;
         this.cotizacionHelper = cotizacionHelper;
         this.trazabilidadHelper = trazabilidadHelper;
@@ -74,10 +77,44 @@ public class OrdenService {
         this.securityHelper = securityHelper;
         this.catEstatusRepository = catEstatusRepository;
         this.notificationService = notificationService;
+        this.personasClient = personasClient;
     }
 
     @Transactional
     public Orden crearCotizacion(CrearOrdenDTO dto) {
+        Orden ordenDatos = dto.getOrden();
+
+        if (ordenDatos.getIdCondicionPago() != null && ordenDatos.getIdCondicionPago().equals(ID_CONDICION_CREDITO)) {
+            ClienteDTO cliente = personasClient.obtenerClientePorId(ordenDatos.getIdCliente());
+
+            if (cliente.getCreditoHabilitado() == null || !cliente.getCreditoHabilitado()) {
+                throw new BadRequestException("Transacción rechazada: El cliente no tiene crédito habilitado.");
+            }
+
+            if ("ATRASADO".equalsIgnoreCase(cliente.getEstatusCredito())) {
+                throw new BadRequestException(
+                        "Transacción rechazada: El cliente tiene un estatus de crédito ATRASADO.");
+            }
+
+            // 3. Validar el límite de crédito disponible con la deuda real
+            BigDecimal limiteCredito = cliente.getLimiteCredito() != null ? cliente.getLimiteCredito()
+                    : BigDecimal.ZERO;
+            BigDecimal saldoDeudor = ordenRepository.calcularSaldoDeudor(ordenDatos.getIdCliente());
+            BigDecimal creditoDisponible = limiteCredito.subtract(saldoDeudor);
+            BigDecimal montoOrden = ordenDatos.getMontoTotal() != null ? ordenDatos.getMontoTotal() : BigDecimal.ZERO;
+
+            if (montoOrden.compareTo(creditoDisponible) > 0) {
+                throw new BadRequestException(
+                        String.format(
+                                "Transacción rechazada: El monto de la orden ($%s) sumado a la deuda actual ($%s) supera el límite de crédito del cliente ($%s).",
+                                montoOrden, saldoDeudor, limiteCredito));
+            }
+
+            Integer dias = cliente.getDiasCredito() != null ? cliente.getDiasCredito() : 0;
+            ordenDatos.setFechaVencimiento(java.time.LocalDateTime.now().plusDays(dias));
+        } else {
+            ordenDatos.setFechaVencimiento(java.time.LocalDateTime.now());
+        }
         Orden nuevaOrden = cotizacionHelper.generarCotizacion(
                 dto.getOrden(),
                 dto.getDetalles());
