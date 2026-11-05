@@ -40,9 +40,6 @@ public class MqttConfig {
         options.setConnectionTimeout(connectionTimeout);
         options.setKeepAliveInterval(keepAliveInterval);
 
-        // Nota: Si en el futuro tu compañero le pone usuario y contraseña a Mosquitto,
-        // los agregarías aquí con options.setUserName() y options.setPassword()
-
         factory.setConnectionOptions(options);
         return factory;
     }
@@ -56,8 +53,8 @@ public class MqttConfig {
     @ServiceActivator(inputChannel = "mqttOutboundChannel")
     public MessageHandler mqttOutbound() {
         MqttPahoMessageHandler messageHandler = new MqttPahoMessageHandler(clientId, mqttClientFactory());
-        messageHandler.setAsync(true); // Envío asíncrono para no bloquear la petición HTTP
-        messageHandler.setDefaultQos(1); // Al menos una vez — garantiza entrega
+        messageHandler.setAsync(true);
+        messageHandler.setDefaultQos(1);
         messageHandler.setDefaultTopic(defaultTopic);
         return messageHandler;
     }

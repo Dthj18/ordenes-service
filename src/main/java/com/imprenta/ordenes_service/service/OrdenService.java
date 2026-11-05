@@ -96,7 +96,6 @@ public class OrdenService {
                         "Transacción rechazada: El cliente tiene un estatus de crédito ATRASADO.");
             }
 
-            // 3. Validar el límite de crédito disponible con la deuda real
             BigDecimal limiteCredito = cliente.getLimiteCredito() != null ? cliente.getLimiteCredito()
                     : BigDecimal.ZERO;
             BigDecimal saldoDeudor = ordenRepository.calcularSaldoDeudor(ordenDatos.getIdCliente());
