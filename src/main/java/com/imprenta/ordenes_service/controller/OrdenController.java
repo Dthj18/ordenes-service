@@ -64,34 +64,40 @@ public class OrdenController {
 
     }
 
-    @PostMapping("/pagos")
-    public ResponseEntity<Movimientos> registrarMovimiento(
-            @RequestHeader("X-User-Id") Integer idUsuario,
-            @RequestBody Map<String, Object> body) {
-
-        // 1. Extraer idCliente (Obligatorio)
-        if (!body.containsKey("idCliente") || body.get("idCliente") == null) {
-            throw new BadRequestException("El idCliente es obligatorio para registrar un pago.");
-        }
-        Integer idCliente = Integer.valueOf(body.get("idCliente").toString());
-
-        // 2. Extraer idOrden (Opcional)
-        Integer idOrden = null;
-        if (body.containsKey("idOrden") && body.get("idOrden") != null) {
-            idOrden = Integer.valueOf(body.get("idOrden").toString());
-        }
-
-        // 3. Extraer el resto de los datos
-        BigDecimal monto = new BigDecimal(body.get("monto").toString());
-        String referencia = body.containsKey("referencia") ? (String) body.get("referencia") : "Sin referencia";
-
-        // 4. Llamar al servicio actualizado con los 5 parámetros
-        Movimientos nuevoMovimiento = ordenService.registrarMovimiento(idCliente, idOrden, monto, referencia,
-                idUsuario);
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(nuevoMovimiento);
-    }
-
+    /*
+     * @PostMapping("/pagos")
+     * public ResponseEntity<Movimientos> registrarMovimiento(
+     * 
+     * @RequestHeader("X-User-Id") Integer idUsuario,
+     * 
+     * @RequestBody Map<String, Object> body) {
+     * 
+     * // 1. Extraer idCliente (Obligatorio)
+     * if (!body.containsKey("idCliente") || body.get("idCliente") == null) {
+     * throw new
+     * BadRequestException("El idCliente es obligatorio para registrar un pago.");
+     * }
+     * Integer idCliente = Integer.valueOf(body.get("idCliente").toString());
+     * 
+     * // 2. Extraer idOrden (Opcional)
+     * Integer idOrden = null;
+     * if (body.containsKey("idOrden") && body.get("idOrden") != null) {
+     * idOrden = Integer.valueOf(body.get("idOrden").toString());
+     * }
+     * 
+     * // 3. Extraer el resto de los datos
+     * BigDecimal monto = new BigDecimal(body.get("monto").toString());
+     * String referencia = body.containsKey("referencia") ? (String)
+     * body.get("referencia") : "Sin referencia";
+     * 
+     * // 4. Llamar al servicio actualizado con los 5 parámetros
+     * Movimientos nuevoMovimiento = ordenService.registrarMovimiento(idCliente,
+     * idOrden, monto, referencia,
+     * idUsuario);
+     * 
+     * return ResponseEntity.status(HttpStatus.CREATED).body(nuevoMovimiento);
+     * }
+     */
     @PutMapping("/{idOrden}/condicion-pago")
     public ResponseEntity<Orden> actualizarCondicionPago(
             @PathVariable Integer idOrden,
