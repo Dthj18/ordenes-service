@@ -55,7 +55,6 @@ public class OrdenService {
 
     private static final String ESTATUS_INICIAL = "COT_INICIADA";
     private static final Integer ID_ESTATUS_CANCELADA = 11;
-    private static final Integer ID_CONDICION_CREDITO = 5;
     private final List<Integer> IDS_NO_ORDENES = Arrays.asList(1, 11);
 
     public OrdenService(OrdenRepository ordenRepository,
@@ -83,20 +82,14 @@ public class OrdenService {
     @Transactional
     public Orden crearCotizacion(CrearOrdenDTO dto) {
         Orden ordenDatos = dto.getOrden();
-
-        // 1. REGLA DE NEGOCIO: Toda cotización nace estrictamente como Contado (1)
-        // Interceptamos lo que mande el frontend y lo forzamos a 1.
         ordenDatos.setIdCondicionPago(1);
 
-        // 2. Al ser contado por defecto, el vencimiento es inmediato
         ordenDatos.setFechaVencimiento(java.time.LocalDateTime.now());
 
-        // 3. Generar la orden con sus detalles (productos, cantidades, etc.)
         Orden nuevaOrden = cotizacionHelper.generarCotizacion(
                 ordenDatos,
                 dto.getDetalles());
 
-        // 4. Registrar en la trazabilidad que la orden nació (Estatus 1 - Cotización)
         trazabilidadHelper.registrarCambio(
                 nuevaOrden.getIdOrden(),
                 ESTATUS_INICIAL,
@@ -109,11 +102,8 @@ public class OrdenService {
     public Movimientos registrarMovimiento(Integer idCliente, Integer idOrden, BigDecimal monto, String referencia,
             Integer idUsuario) {
 
-        // 1. El helper ahora debe recibir el idCliente (obligatorio) y el idOrden
-        // (opcional)
         Movimientos movimiento = movimientosHelper.registrarAbono(idCliente, idOrden, monto, referencia, idUsuario);
 
-        // 2. Construir un mensaje dinámico dependiendo de si es abono global o de orden
         String tituloNotificacion;
         String cuerpoNotificacion;
 
@@ -126,8 +116,6 @@ public class OrdenService {
                     + ".";
         }
 
-        // 3. Enviar la notificación (Cambié la clave a PAGO_REGISTRADO para que cubra
-        // ambos casos)
         notificationService.notificarARoles(
                 String.valueOf(idUsuario),
                 List.of("CONTADORA", "JEFE DE TALLER", "DISEÑADOR", "DUEÑO"),
