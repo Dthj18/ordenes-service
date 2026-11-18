@@ -31,14 +31,9 @@ public class EstadoOrdenListaEntrega implements OrdenState {
     @Override
     public Integer procesarSiguientePaso(Orden orden, Integer idUsuario, Map<String, Object> params) {
 
-        // 1. Mantenemos intactas las reglas de seguridad
         securityHelper.validarPermiso(idUsuario,
                 SecurityHelper.ROL_MOSTRADOR,
                 SecurityHelper.ROL_JEFE_TALLER);
-
-        // SE ELIMINÓ LA RESTRICCIÓN DE PAGO (pagado.compareTo(total) < 0)
-        // Ahora el mostrador puede entregar la orden físicamente aunque deba el total.
-        // La deuda sigue viva en el "saldo global" del cliente.
 
         return ID_FINALIZADA;
     }

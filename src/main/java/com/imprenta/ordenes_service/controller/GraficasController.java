@@ -20,9 +20,12 @@ import com.imprenta.ordenes_service.dto.graficas.DashboardIngresosDTO;
 import com.imprenta.ordenes_service.dto.reportes.CotizacionesGraficaDTO;
 import com.imprenta.ordenes_service.dto.reportes.DashboardResumenDTO;
 import com.imprenta.ordenes_service.dto.reportes.OrdenesGraficaDTO;
+import com.imprenta.ordenes_service.dto.reportes.TopClienteDTO;
+import com.imprenta.ordenes_service.dto.reportes.TopProductoDTO;
 import com.imprenta.ordenes_service.dto.tablas.FlujoCajaDTO;
 import com.imprenta.ordenes_service.dto.tablas.MovimientoTablaDTO;
 import com.imprenta.ordenes_service.helpers.SecurityHelper;
+import com.imprenta.ordenes_service.repository.OrdenRepository;
 import com.imprenta.ordenes_service.service.GraficasService;
 
 @RestController
@@ -31,11 +34,14 @@ public class GraficasController {
 
     private final SecurityHelper securityHelper;
     private final GraficasService graficasService;
+    private final OrdenRepository ordenRepository;
 
     @Autowired
-    public GraficasController(SecurityHelper securityHelper, GraficasService graficasService) {
+    public GraficasController(SecurityHelper securityHelper, GraficasService graficasService,
+            OrdenRepository ordenRepository) {
         this.securityHelper = securityHelper;
         this.graficasService = graficasService;
+        this.ordenRepository = ordenRepository;
     }
 
     @GetMapping("/movil/graficas")
@@ -116,4 +122,13 @@ public class GraficasController {
         return ResponseEntity.ok(respuesta);
     }
 
+    @GetMapping("/top-productos")
+    public ResponseEntity<List<TopProductoDTO>> getTopProductos() {
+        return ResponseEntity.ok(ordenRepository.obtenerProductosMasSolicitados());
+    }
+
+    @GetMapping("/top-clientes")
+    public ResponseEntity<List<TopClienteDTO>> getTopClientes() {
+        return ResponseEntity.ok(ordenRepository.obtenerTopClientesPagados());
+    }
 }

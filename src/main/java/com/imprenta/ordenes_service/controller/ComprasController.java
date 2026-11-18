@@ -38,7 +38,7 @@ public class ComprasController {
                 return ResponseEntity.badRequest().body("La lista de productos no puede estar vacía");
             }
 
-            dto.setIdUsuario(idUsuario); // sobreescribe cualquier valor que venga en el body con el del token
+            dto.setIdUsuario(idUsuario);
 
             SolicitudInsumo solicitudGuardada = comprasService.crearSolicitud(dto);
 

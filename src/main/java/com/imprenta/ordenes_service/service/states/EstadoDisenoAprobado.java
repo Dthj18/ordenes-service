@@ -30,7 +30,6 @@ public class EstadoDisenoAprobado implements OrdenState {
     @Override
     public Integer procesarSiguientePaso(Orden orden, Integer idUsuario, Map<String, Object> params) {
 
-        // El Diseñador (entrega) o Jefe Taller (recibe)
         securityHelper.validarPermiso(idUsuario,
                 SecurityHelper.ROL_DISENADOR,
                 SecurityHelper.ROL_JEFE_TALLER);
